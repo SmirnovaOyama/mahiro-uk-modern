@@ -1,0 +1,83 @@
+/* The link preview picture, 1200 × 630, in the site's own look: the folded
+   sentence large and light on white, dotted phrases waiting to be opened, and
+   the address with the cat asleep at the bottom. */
+
+html,
+body {
+    margin: 0;
+    background: var(--bg);
+}
+
+.card {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 1200px;
+    height: 630px;
+    padding: 84px 96px 64px;
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+.sentence {
+    margin: 0;
+    max-width: 1000px;
+    font-family: var(--font-display);
+    font-size: 60px;
+    line-height: 1.38;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    text-wrap: pretty;
+}
+
+.dotted {
+    white-space: nowrap;
+    text-decoration: underline dotted;
+    text-decoration-color: var(--border-strong);
+    text-decoration-thickness: 0.07em;
+    text-underline-offset: 0.2em;
+}
+
+.avatar {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    margin-inline-end: 0.04em;
+    border-radius: var(--radius-full);
+    vertical-align: -0.24em;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+}
+
+.foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.site {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text-muted);
+}
+
+.doodle {
+    width: 36px;
+    height: 36px;
+    color: var(--illustration-line);
+}
+.doodle .wash {
+    fill: var(--illustration-wash);
+    stroke: none;
+}
+
+.cat {
+    width: 156px;
+    height: 90px;
+}

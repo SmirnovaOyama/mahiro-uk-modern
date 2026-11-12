@@ -64,6 +64,13 @@ function checkStill(api: SiteApi, where: string, problems: Problem[]): void {
     if (bad) problems.push({ check: 'punctuation', detail: `${where}: "…${prose.slice(Math.max(0, bad.index - 15), bad.index + 15)}…"` });
     // Nothing may push the page sideways.
     if (document.documentElement.scrollWidth > innerWidth + 1) problems.push({ check: 'sideways scroll', detail: `${where}: page is ${document.documentElement.scrollWidth}px in a ${innerWidth}px window` });
+    // A one-letter word left at the end of a line ("… and I") reads as a stumble.
+    for (const row of lines(text)) if (/\s(I|a)$/.test(row.trimEnd())) problems.push({ check: 'one-letter word at line end', detail: `${where}: "…${row.slice(-20)}"` });
+    // A dotted phrase is one thing to tap; split over two lines it reads as two.
+    text.querySelectorAll('button.fold').forEach(b => {
+        const rects = [...b.getClientRects()].filter(r => r.width > 0);
+        if (rects.length > 1) problems.push({ check: 'dotted phrase split', detail: `${where}: ${b.textContent}` });
+    });
     // A link's icon must never sit at the end of a line, away from its words.
     text.querySelectorAll('a.link').forEach(a => {
         const rects = [...a.getClientRects()].filter(r => r.width > 0);

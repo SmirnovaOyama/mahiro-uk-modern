@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "tokens": "node scripts/build-tokens.ts",
-    "favicon": "node scripts/build-favicon.ts"
+    "favicon": "node scripts/build-favicon.ts",
+    "og": "node scripts/build-og.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

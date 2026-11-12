@@ -1,0 +1,11 @@
+// Cloudflare deployment. The site is entirely static: `npm run build` writes
+// it to dist/, and `wrangler deploy` uploads that folder as static assets.
+// There is no Worker script and no Vite plugin.
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "mahiro-uk-modern",
+    "compatibility_date": "2026-11-10",
+    "assets": {
+        "directory": "./dist"
+    }
+}

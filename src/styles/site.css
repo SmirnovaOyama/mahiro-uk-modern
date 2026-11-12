@@ -124,6 +124,7 @@ main {
 /* A word that opens: dotted, like a note in a margin. */
 .fold {
     display: inline;
+    white-space: nowrap;
     padding: 0;
     border: none;
     border-radius: var(--radius-xs);

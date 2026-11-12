@@ -42,7 +42,7 @@ const en: Copy = {
         go: 'Take me there',
         stay: 'Stay here',
     },
-    root: '{$avatar} Hello, and welcome. I’m {>name}. I build {>things}. I am unreservedly devoted to {>mahiro}, and I read {>write}.',
+    root: '{$avatar} Hello, and welcome. I’m {>name}. I\u00a0build {>things}. I\u00a0am unreservedly devoted to {>mahiro}, and I\u00a0read {>write}.',
     nodes: {
         name: { label: 'Anya', body: 'Smirnova Anya (寻寻), writing from {>where}' },
         where: { label: 'UTC+8', body: 'UTC+8, where it is {$time} on {$day} and {>cat} is {$state}' },
