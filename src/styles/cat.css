@@ -1,0 +1,330 @@
+/* The pixel cats' motion, copied as is from Oyama's HRT Tracker (src/styles/motion.css). */
+/* ── the pixel cats ──────────────────────────────────────────────────────────
+   Steps, not tweens: they move a whole pixel at a time, and only the parts a
+   real cat would move. Periods share no factor, so the cat never does two
+   things on the same beat twice running. */
+@keyframes px-blink {
+    0%,
+    92% {
+        opacity: 0;
+    }
+    92.01%,
+    96% {
+        opacity: 1;
+    }
+    96.01%,
+    100% {
+        opacity: 0;
+    }
+}
+/* Tail: still for most of the loop, then two quick swishes. */
+@keyframes px-tail-rest {
+    0%,
+    68% {
+        opacity: 1;
+    }
+    68.01%,
+    74% {
+        opacity: 0;
+    }
+    74.01%,
+    80% {
+        opacity: 1;
+    }
+    80.01%,
+    86% {
+        opacity: 0;
+    }
+    86.01%,
+    100% {
+        opacity: 1;
+    }
+}
+@keyframes px-tail-flick {
+    0%,
+    68% {
+        opacity: 0;
+    }
+    68.01%,
+    74% {
+        opacity: 1;
+    }
+    74.01%,
+    80% {
+        opacity: 0;
+    }
+    80.01%,
+    86% {
+        opacity: 1;
+    }
+    86.01%,
+    100% {
+        opacity: 0;
+    }
+}
+/* Making biscuits: four alternating beats, then the paws settle again. */
+@keyframes px-paw-rest {
+    0%,
+    58% {
+        opacity: 1;
+    }
+    58.01%,
+    90% {
+        opacity: 0;
+    }
+    90.01%,
+    100% {
+        opacity: 1;
+    }
+}
+@keyframes px-paw-left {
+    0%,
+    58% {
+        opacity: 0;
+    }
+    58.01%,
+    66% {
+        opacity: 1;
+    }
+    66.01%,
+    74% {
+        opacity: 0;
+    }
+    74.01%,
+    82% {
+        opacity: 1;
+    }
+    82.01%,
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes px-paw-right {
+    0%,
+    66% {
+        opacity: 0;
+    }
+    66.01%,
+    74% {
+        opacity: 1;
+    }
+    74.01%,
+    82% {
+        opacity: 0;
+    }
+    82.01%,
+    90% {
+        opacity: 1;
+    }
+    90.01%,
+    100% {
+        opacity: 0;
+    }
+}
+/* The loaf has one paw to push out: a slow two-beat stretch. */
+@keyframes px-paw-still {
+    0%,
+    62% {
+        opacity: 1;
+    }
+    62.01%,
+    78% {
+        opacity: 0;
+    }
+    78.01%,
+    100% {
+        opacity: 1;
+    }
+}
+@keyframes px-paw-stretch {
+    0%,
+    62% {
+        opacity: 0;
+    }
+    62.01%,
+    78% {
+        opacity: 1;
+    }
+    78.01%,
+    100% {
+        opacity: 0;
+    }
+}
+/* Ear flick: mostly at rest, one quick step out and back. */
+@keyframes px-ear-rest {
+    0%,
+    88% {
+        opacity: 1;
+    }
+    88.01%,
+    94% {
+        opacity: 0;
+    }
+    94.01%,
+    100% {
+        opacity: 1;
+    }
+}
+@keyframes px-ear-twitch {
+    0%,
+    88% {
+        opacity: 0;
+    }
+    88.01%,
+    94% {
+        opacity: 1;
+    }
+    94.01%,
+    100% {
+        opacity: 0;
+    }
+}
+/* Grooming: the paw to the face and back, twice a second. */
+@keyframes px-lick-a {
+    0%,
+    49.99% {
+        opacity: 1;
+    }
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes px-lick-b {
+    0%,
+    49.99% {
+        opacity: 0;
+    }
+    50%,
+    100% {
+        opacity: 1;
+    }
+}
+/* Chewing: held down slightly longer than up, so it isn't a metronome. */
+@keyframes px-chew {
+    0%,
+    44% {
+        opacity: 0;
+    }
+    44.01%,
+    100% {
+        opacity: 1;
+    }
+}
+/* The fish a waiting cat is thinking about: two frames a pixel apart. */
+@keyframes px-float-a {
+    0%,
+    53.99% {
+        opacity: 1;
+    }
+    54%,
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes px-float-b {
+    0%,
+    53.99% {
+        opacity: 0;
+    }
+    54%,
+    100% {
+        opacity: 1;
+    }
+}
+/* Sleep marks: a slow swell and fade, with a long gap between. */
+@keyframes px-zzz {
+    0%,
+    6% {
+        opacity: 0;
+    }
+    22%,
+    62% {
+        opacity: 1;
+    }
+    82%,
+    100% {
+        opacity: 0;
+    }
+}
+.px-ear-rest {
+    animation: px-ear-rest 3.4s steps(1) infinite;
+}
+.px-ear-twitch {
+    animation: px-ear-twitch 3.4s steps(1) infinite;
+}
+.px-blink {
+    animation: px-blink 4.8s steps(1) infinite;
+}
+.px-tail-rest {
+    animation: px-tail-rest 5.6s steps(1) infinite;
+}
+.px-tail-flick {
+    animation: px-tail-flick 5.6s steps(1) infinite;
+}
+.px-paw-rest {
+    animation: px-paw-rest 6.4s steps(1) infinite;
+}
+.px-paw-left {
+    animation: px-paw-left 6.4s steps(1) infinite;
+}
+.px-paw-right {
+    animation: px-paw-right 6.4s steps(1) infinite;
+}
+.px-paw-still {
+    animation: px-paw-still 7.1s steps(1) infinite;
+}
+.px-paw-stretch {
+    animation: px-paw-stretch 7.1s steps(1) infinite;
+}
+.px-lick-a {
+    animation: px-lick-a 0.5s steps(1) infinite;
+}
+.px-lick-b {
+    animation: px-lick-b 0.5s steps(1) infinite;
+}
+.px-chew {
+    animation: px-chew 0.62s steps(1) infinite;
+}
+.px-float-a {
+    animation: px-float-a 2.9s steps(1) infinite;
+}
+.px-float-b {
+    animation: px-float-b 2.9s steps(1) infinite;
+}
+.px-zzz {
+    animation: px-zzz 4.6s ease-in-out infinite;
+}
+
+/* Hold a single resting pose instead of flicking between frames. */
+@media (prefers-reduced-motion: reduce) {
+    .px-ear-rest,
+    .px-ear-twitch,
+    .px-blink,
+    .px-tail-rest,
+    .px-tail-flick,
+    .px-paw-rest,
+    .px-paw-left,
+    .px-paw-right,
+    .px-paw-still,
+    .px-paw-stretch,
+    .px-lick-a,
+    .px-lick-b,
+    .px-chew,
+    .px-float-a,
+    .px-float-b,
+    .px-zzz {
+        animation: none;
+    }
+    .px-ear-twitch,
+    .px-blink,
+    .px-tail-flick,
+    .px-paw-left,
+    .px-paw-right,
+    .px-paw-stretch,
+    .px-lick-b,
+    .px-chew,
+    .px-float-b {
+        opacity: 0;
+    }
+}

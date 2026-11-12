@@ -1,0 +1,430 @@
+/* One sentence on a white page, set large and light. Dotted words unfold
+   into longer phrases; solid underlines are links. Colours, spacing and radii
+   all come from tokens.css (the Oyama design system). */
+
+:root {
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-quick: 150ms;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+:lang(zh) {
+    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, system-ui, 'PingFang SC',
+        'Microsoft YaHei', 'Segoe UI', Helvetica, Arial, sans-serif;
+    --font-display: 'SF Pro Display', -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, 'PingFang SC',
+        'Microsoft YaHei', 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+
+h1,
+p {
+    margin: 0;
+}
+a {
+    color: inherit;
+}
+button {
+    font: inherit;
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ── the frame ────────────────────────────────────────────────────────── */
+
+.top,
+main {
+    width: 100%;
+    max-width: 44rem;
+    margin-inline: auto;
+    padding-inline: var(--space-6);
+}
+@media (min-width: 768px) {
+    .top,
+    main {
+        padding-inline: var(--space-8);
+    }
+}
+
+.top {
+    /* Frozen to the top of the screen, as the bar is to the bottom. */
+    position: fixed;
+    inset-inline: 0;
+    inset-block-start: 0;
+    z-index: var(--z-header);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-1);
+    padding-block: calc(var(--space-5) + env(safe-area-inset-top, 0px)) var(--space-5);
+    /* The sentence fades out beneath the icons instead of running into them. */
+    background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+}
+/* The last icon's ink lines up with the sentence's right edge, not its hover pill. */
+.top > :last-child {
+    margin-inline-end: calc(-1 * var(--space-2));
+}
+
+main {
+    flex: 1;
+    /* Room at the bottom so the frozen bar never sits on the last line. */
+    /* The frozen header is 4.5rem tall; the sentence starts below it. */
+    padding-block: calc(4.5rem + clamp(var(--space-8), 11svh, var(--space-16))) var(--space-32);
+}
+
+/* ── the sentence ─────────────────────────────────────────────────────── */
+
+.text {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 4.4vw, 2.375rem);
+    line-height: 1.4;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    text-wrap: pretty;
+}
+:lang(zh) .text {
+    line-height: 1.7;
+    letter-spacing: 0;
+}
+
+/* A word that opens: dotted, like a note in a margin. */
+.fold {
+    display: inline;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-xs);
+    background: none;
+    letter-spacing: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-decoration-color: var(--border-strong);
+    text-decoration-thickness: 0.07em;
+    text-underline-offset: 0.2em;
+    transition:
+        color var(--duration-quick) var(--ease-standard),
+        text-decoration-color var(--duration-quick) var(--ease-standard);
+}
+.fold:hover {
+    color: var(--accent-ink);
+    text-decoration-color: currentColor;
+}
+
+/* A link: a solid line, quieter than the words around it until touched. */
+.link {
+    border-radius: var(--radius-xs);
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-decoration-thickness: 0.05em;
+    text-underline-offset: 0.2em;
+    transition:
+        color var(--duration-quick) var(--ease-standard),
+        text-decoration-color var(--duration-quick) var(--ease-standard);
+}
+.link:hover {
+    color: var(--accent-ink);
+    text-decoration-color: currentColor;
+}
+
+.unfolded:focus {
+    outline: none;
+}
+
+/* GitHub's mark, at the size of a letter, just before its name, and never
+   left behind at the end of a line. */
+.link.has-icon,
+.nobr {
+    white-space: nowrap;
+}
+/* The tracker's own app icon, shaped like one, at the height of a capital. */
+.app-icon {
+    display: inline-block;
+    width: 0.92em;
+    height: 0.92em;
+    margin-inline-end: 0.24em;
+    border-radius: 0.24em;
+    vertical-align: -0.1em;
+    box-shadow: 0 0 0 1px var(--border);
+}
+.mark-inline {
+    display: inline-block;
+    width: 0.72em;
+    height: 0.72em;
+    margin-inline-end: 0.22em;
+    vertical-align: -0.02em;
+}
+
+/* While the sentence changes, the real text is hidden in its final shape and
+   copies of its letters move in a layer laid over it (see transition.ts). */
+main {
+    position: relative;
+}
+.type-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+    white-space: pre;
+    letter-spacing: 0;
+}
+.text.is-moving {
+    opacity: 0;
+}
+/* When it reappears, its underlines start hidden and then fade in. */
+.text.is-moving .fold,
+.text.is-moving .link,
+.text.is-settling .fold,
+.text.is-settling .link {
+    text-decoration-color: transparent;
+    transition: none;
+}
+
+/* My avatar, opening the sentence like a signature, a little taller than a capital. */
+.avatar {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    margin-inline-end: 0.04em;
+    border-radius: var(--radius-full);
+    vertical-align: -0.24em;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+}
+
+/* A hand-drawn mark inside the sentence, the size of a capital letter. */
+.doodle-inline {
+    display: inline-block;
+    width: 1.05em;
+    height: 1.05em;
+    /* The drawing has its own air inside its square, so it needs almost none outside. */
+    margin-inline-end: 0.04em;
+    vertical-align: -0.17em;
+    color: var(--illustration-line);
+}
+.doodle-inline .wash {
+    fill: var(--illustration-wash);
+    stroke: none;
+}
+
+/* The cat, at the size of a word. */
+.cat-inline {
+    display: inline-block;
+    height: 0.8em;
+    width: auto;
+    aspect-ratio: 26 / 15;
+    margin-inline: 0.1em;
+    vertical-align: -0.02em;
+}
+
+/* ── the bar under the sentence, frozen to the bottom of the screen ──── */
+
+.controls {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: var(--z-nav);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    max-width: 44rem;
+    margin-inline: auto;
+    padding: var(--space-6) var(--space-6) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    /* The page fades out under the bar instead of being cut by a line. */
+    background: linear-gradient(to top, var(--bg) 62%, transparent);
+}
+@media (min-width: 768px) {
+    .controls {
+        padding-inline: var(--space-8);
+    }
+}
+.hint {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--text-muted);
+}
+
+/* The hand-drawn marks: terracotta ink with a pale wash, the size of a word. */
+.doodle {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--illustration-line);
+}
+.doodle .wash {
+    fill: var(--illustration-wash);
+    stroke: none;
+}
+.hint-icon {
+    display: inline-flex;
+}
+
+.btn-ghost {
+    flex: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    padding: 0 0.625rem;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-quick) var(--ease-standard),
+        color var(--duration-quick) var(--ease-standard);
+}
+.btn-ghost:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+.btn-ghost:active {
+    transform: scale(0.97);
+}
+.btn-doodle[hidden] {
+    display: none;
+}
+.text:focus {
+    outline: none;
+}
+.btn-doodle {
+    flex: none;
+    white-space: nowrap;
+    gap: var(--space-1_5);
+    padding-inline: var(--space-2) var(--space-3);
+    margin-inline-end: calc(-1 * var(--space-2));
+}
+.btn-icon {
+    width: 2rem;
+    padding: 0;
+}
+
+/* After a move, the dotted and solid lines come back slowly, like ink. */
+.fold,
+.link {
+    transition:
+        color var(--duration-quick) var(--ease-standard),
+        text-decoration-color 480ms var(--ease-standard);
+}
+
+/* ── a gentle word before leaving ─────────────────────────────────────── */
+
+.leave {
+    position: fixed;
+    z-index: var(--z-menu);
+    /* As wide as its words need, so no empty margin is left beside them. */
+    width: max-content;
+    max-width: min(22rem, calc(100vw - 2rem));
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    animation: leave-in 200ms var(--ease-out) both;
+}
+.leave[hidden] {
+    display: none;
+}
+.leave p {
+    color: var(--text);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+.leave-actions {
+    /* Always as wide as the two buttons side by side; the card grows to fit, never the other way. */
+    width: max-content;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-3);
+}
+@keyframes leave-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.btn-tonal {
+    flex: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    height: 2rem;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-full);
+    background: var(--accent-subtle);
+    color: var(--on-accent-subtle);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color var(--duration-quick) var(--ease-standard);
+}
+.btn-tonal:hover {
+    background: var(--accent-subtle-hover);
+}
+.btn-tonal:active {
+    transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .leave {
+        animation: none;
+    }
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+    }
+}

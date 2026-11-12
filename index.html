@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>Smirnova Anya</title>
+        <meta name="description" content="Smirnova Anya builds quiet, deliberate software in the open." />
+        <meta name="color-scheme" content="light dark" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script>
+            // Before the first paint, so a saved theme never flashes the other one.
+            try {
+                var theme = localStorage.getItem('site-theme');
+                if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+            } catch (e) {}
+        </script>
+        <script type="module" src="/src/main.ts"></script>
+    </head>
+    <body>
+        <header class="top">
+            <a class="btn-ghost btn-icon" id="gh" rel="me noopener" aria-label="GitHub"></a>
+            <button class="btn-ghost btn-icon" id="theme" type="button"></button>
+        </header>
+
+        <main>
+            <h1 class="sr-only">Smirnova Anya</h1>
+            <p class="text" id="text" aria-live="polite" tabindex="-1"></p>
+        </main>
+
+        <div class="controls">
+            <p class="hint"><span class="hint-icon" id="hint-icon"></span><span id="hint"></span></p>
+        </div>
+
+        <div class="leave" id="leave" role="dialog" aria-labelledby="leave-text" hidden>
+            <p id="leave-text"></p>
+            <div class="leave-actions">
+                <a class="btn-tonal" id="leave-go" target="_blank" rel="noopener"></a>
+                <button class="btn-ghost" id="leave-stay" type="button"></button>
+            </div>
+        </div>
+    </body>
+</html>
