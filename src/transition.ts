@@ -25,6 +25,25 @@ interface Piece {
     picture?: Element;
 }
 
+/**
+ * What stands in for a picture while it moves. A photo is painted onto a
+ * canvas straight from the pixels already on screen, because a copied <img>
+ * has to be decoded again and phones show it white until then. Drawings
+ * (SVG) are simply copied; they appear at once.
+ */
+function standIn(el: HTMLImageElement | SVGSVGElement, r: DOMRect): Element {
+    if (el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0) {
+        const canvas = document.createElement('canvas');
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.round(r.width * ratio));
+        canvas.height = Math.max(1, Math.round(r.height * ratio));
+        canvas.className = el.className;
+        canvas.getContext('2d')?.drawImage(el, 0, 0, canvas.width, canvas.height);
+        return canvas;
+    }
+    return el.cloneNode(true) as Element;
+}
+
 function measure(root: HTMLElement, origin: DOMRect): Piece[] {
     const pieces: Piece[] = [];
     const range = document.createRange();
@@ -48,7 +67,7 @@ function measure(root: HTMLElement, origin: DOMRect): Piece[] {
                 const r = child.getBoundingClientRect();
                 pieces.push({
                     key: `pic:${child.getAttribute('class')}`,
-                    picture: child.cloneNode(true) as Element,
+                    picture: standIn(child, r),
                     x: r.left - origin.left,
                     y: r.top - origin.top,
                     w: r.width,
@@ -89,7 +108,7 @@ function commonPieces(a: string[], b: string[]): [number, number][] {
 function copyOf(piece: Piece, layer: HTMLElement): HTMLElement | SVGElement {
     let el: HTMLElement | SVGElement;
     if (piece.picture) {
-        el = piece.picture.cloneNode(true) as HTMLElement | SVGElement;
+        el = piece.picture as HTMLElement | SVGElement;
         el.style.width = `${piece.w}px`;
         el.style.height = `${piece.h}px`;
         el.style.margin = '0';

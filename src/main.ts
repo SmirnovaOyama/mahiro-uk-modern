@@ -27,15 +27,35 @@ interface Link {
     icon?: () => Node;
 }
 
-const appIcon = (src: string) => (): Node => {
-    const img = document.createElement('img');
-    img.className = 'app-icon';
-    img.src = src;
-    img.alt = '';
-    img.width = 48;
-    img.height = 48;
+/**
+ * One element per picture, kept for the life of the page and moved back in on
+ * every redraw. A new <img> each time would have to be decoded again, and
+ * phones show it blank (white) until it is.
+ */
+const pictures = new Map<string, HTMLImageElement>();
+function picture(src: string, className: string, size: number): HTMLImageElement {
+    let img = pictures.get(src);
+    if (!img) {
+        img = document.createElement('img');
+        img.className = className;
+        img.src = src;
+        // Words beside each picture say what it is, so the picture itself says nothing.
+        img.alt = '';
+        img.width = size;
+        img.height = size;
+        img.decoding = 'sync';
+        pictures.set(src, img);
+    }
     return img;
-};
+}
+
+const appIcon = (src: string) => (): Node => picture(src, 'app-icon', 48);
+
+// Load and decode both pictures as soon as the page opens, so neither is ever
+// shown, or copied for the animation, before its pixels are ready.
+for (const [src, className, size] of [['avatar.jpg', 'avatar', 128], ['icons/hrt.png', 'app-icon', 48]] as const) {
+    picture(src, className, size).decode().catch(() => {});
+}
 
 const markIcon = (): Node => {
     const holder = document.createElement('span');
@@ -114,14 +134,7 @@ function append(template: string, into: Element, values: Record<string, string>)
             }
         } else if (kind === '$') {
             if (name === 'avatar') {
-                const img = document.createElement('img');
-                img.className = 'avatar';
-                img.src = 'avatar.jpg';
-                // The name follows it in the sentence, so the picture itself says nothing.
-                img.alt = '';
-                img.width = 128;
-                img.height = 128;
-                into.append(img);
+                into.append(picture('avatar.jpg', 'avatar', 128));
             } else if (name === 'catpic') {
                 const svg = document.createElementNS(SVG, 'svg');
                 svg.classList.add('cat-inline');
