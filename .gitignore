@@ -3,3 +3,6 @@ dist
 .DS_Store
 .claude/
 .wrangler/
+.dev.vars
+# Copied from node_modules by vite.config.ts
+public/vendor/

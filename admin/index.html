@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>Editor</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="color-scheme" content="light dark" />
+        <link rel="icon" href="/favicon.png?v=3" type="image/png" />
+        <script>
+            try {
+                var theme = localStorage.getItem('site-theme');
+                if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+            } catch (e) {}
+        </script>
+        <script type="module" src="/src/admin/main.ts"></script>
+    </head>
+    <body class="admin">
+        <div id="app"></div>
+    </body>
+</html>

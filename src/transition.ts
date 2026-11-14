@@ -207,6 +207,8 @@ export function transition(text: HTMLElement, redraw: () => void, from: DOMRect 
     const keptNew = new Set(pairs.map(([, j]) => j));
 
     // Letters that stay: they travel, the far ones in a low arc, like a hand moving type.
+    // At full speed they blur and draw out along their path, as quick things do to the
+    // eye, by as much as how far they're going; a letter shifting a little stays sharp.
     for (const [i, j] of pairs) {
         const was = before[i]!;
         const now = after[j]!;
@@ -216,12 +218,24 @@ export function transition(text: HTMLElement, redraw: () => void, from: DOMRect 
         const far = Math.hypot(dx, dy);
         if (far < 0.5) continue;
         const lift = Math.min(36, far * 0.18);
+        const blur = Math.min(3.4, far / 55);
+        const smear = 1 + Math.min(0.28, far / 800);
+        // The way it is heading at full speed (towards its place, and up into its arc),
+        // so the smear runs along the path, not across it.
+        const heading = Math.atan2(-0.38 * dy - 0.8 * lift, -0.38 * dx);
+        const along = (stretch: number, tilt: number): string =>
+            `rotate(${tilt}deg) rotate(${heading}rad) scaleX(${stretch}) rotate(${-heading}rad)`;
         play(
             el,
             [
-                { transform: `translate(${dx}px, ${dy}px)` },
-                { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - lift}px) rotate(${wobble(6)}deg)`, offset: 0.5 },
-                { transform: 'none' },
+                { transform: `translate(${dx}px, ${dy}px) ${along(1, 0)}`, filter: 'blur(0px)' },
+                {
+                    transform: `translate(${dx * 0.62}px, ${dy * 0.62 - lift * 0.8}px) ${along(smear, wobble(3))}`,
+                    filter: `blur(${blur}px)`,
+                    offset: 0.3,
+                },
+                { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - lift}px) ${along(1 + (smear - 1) * 0.5, wobble(6))}`, filter: `blur(${blur * 0.5}px)`, offset: 0.5 },
+                { transform: `translate(0px, 0px) ${along(1, 0)}`, filter: 'blur(0px)' },
             ],
             {
                 duration: 560 + Math.min(far, 500) * 0.7,
@@ -232,16 +246,18 @@ export function transition(text: HTMLElement, redraw: () => void, from: DOMRect 
         );
     }
 
-    // Letters that go: they lift off the page and blur away.
+    // Letters that go: they lift off the page and blur away, faster and further the nearer the tap.
     before.forEach((piece, i) => {
         if (keptOld.has(i)) return;
+        const near = 1 - Math.min(distance(piece), 600) / 600;
         play(
             place(piece),
             [
-                { opacity: 1 },
+                { opacity: 1, filter: 'blur(0px)' },
+                { opacity: 0.6, filter: `blur(${1 + near}px)`, offset: 0.4 },
                 {
                     opacity: 0,
-                    filter: 'blur(4px)',
+                    filter: `blur(${4 + near * 4}px)`,
                     transform: `translate(${wobble(8)}px, ${-10 - Math.random() * 14}px) rotate(${wobble(24)}deg)`,
                 },
             ],
@@ -257,8 +273,10 @@ export function transition(text: HTMLElement, redraw: () => void, from: DOMRect 
     // Letters that arrive: they soak in from where you tapped, in terracotta, and dry to ink.
     after.forEach((piece, j) => {
         if (keptNew.has(j)) return;
+        // The further from the tap, the more out of focus it starts, as if the ink had further to spread.
+        const haze = 5 + Math.min(distance(piece), 600) / 120;
         const frames: Keyframe[] = [
-            { opacity: 0, filter: 'blur(7px)', transform: 'translateY(0.35em) scale(0.8)' },
+            { opacity: 0, filter: `blur(${haze}px)`, transform: 'translateY(0.35em) scale(0.8)' },
             // The blur and the movement are over early, so the long tail is only the colour drying.
             { opacity: 1, filter: 'none', transform: 'none', offset: 0.35 },
             { opacity: 1, filter: 'none', transform: 'none' },

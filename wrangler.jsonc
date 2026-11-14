@@ -1,11 +1,29 @@
-// Cloudflare deployment. The site is entirely static: `npm run build` writes
-// it to dist/, and `wrangler deploy` uploads that folder as static assets.
-// There is no Worker script and no Vite plugin.
+// Cloudflare deployment. `npm run build` writes the static site and the Worker
+// to dist/, and `wrangler deploy` uploads both (the Vite plugin points it at
+// the built config). Static files are served directly; only the paths in
+// `run_worker_first` reach the Worker (worker/index.ts).
 {
     "$schema": "node_modules/wrangler/config-schema.json",
     "name": "mahiro-uk-modern",
+    "main": "./worker/index.ts",
     "compatibility_date": "2026-11-10",
     "assets": {
-        "directory": "./dist"
-    }
+        "binding": "ASSETS",
+        "html_handling": "auto-trailing-slash",
+        "run_worker_first": ["/api/*", "/writing", "/writing/*", "/collections/*", "/admin/preview/*", "/media/*", "/sitemap.xml", "/page", "/page.html"]
+    },
+    // Articles and collections. Create the database once with
+    // `npx wrangler d1 create mahiro-uk-writing` and paste its id here.
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "mahiro-uk-writing",
+            "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+            "migrations_dir": "migrations"
+        }
+    ],
+    // Pictures pasted or dropped into an article. Create the bucket once with
+    // `npx wrangler r2 bucket create mahiro-uk-media`.
+    "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "mahiro-uk-media" }],
+    "observability": { "enabled": true }
 }

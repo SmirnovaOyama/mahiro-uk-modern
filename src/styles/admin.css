@@ -1,0 +1,428 @@
+/* The editor at /admin/. A list on the left; on the right, the piece being
+   written, in the reading page's own type. Builds on site.css and writing.css. */
+
+.muted {
+    color: var(--text-muted);
+}
+.small {
+    font-size: 0.8125rem;
+}
+.spacer {
+    flex: 1;
+}
+[hidden] {
+    display: none !important;
+}
+button:disabled {
+    cursor: default;
+}
+
+.btn-filled {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    height: 2rem;
+    padding: 0 var(--space-4);
+    border: none;
+    border-radius: var(--radius-full);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-quick) var(--ease-standard);
+}
+.btn-filled:hover {
+    background: var(--accent-hover);
+}
+.btn-filled:disabled {
+    background: none;
+    color: var(--text-muted);
+}
+.btn-ghost.danger:hover {
+    color: var(--danger);
+}
+
+/* ── signing in ───────────────────────────────────────────────────────── */
+
+.signin-wrap {
+    display: grid;
+    place-items: center;
+    min-height: 100svh;
+    padding: var(--space-6);
+}
+.signin {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: min(20rem, 100%);
+}
+.password {
+    width: 100%;
+    padding: var(--space-2) 0;
+    border: none;
+    border-block-end: 1px dotted var(--border-strong);
+    background: none;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 300;
+}
+.password:focus {
+    outline: none;
+    border-block-end-color: var(--accent-ink);
+}
+.save-error {
+    color: var(--danger);
+}
+
+/* ── the desk ─────────────────────────────────────────────────────────── */
+
+.shell {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    height: 100svh;
+}
+.side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-height: 0;
+    padding: var(--space-5) var(--space-4);
+}
+.side-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.side-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+.side-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-end: var(--space-1);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.side-label .btn-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+.side-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.side-item {
+    display: block;
+    overflow: hidden;
+    padding-block: var(--space-1);
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.side-item.is-draft {
+    color: var(--text-muted);
+}
+.side-item:hover,
+.side-item[aria-current='page'] {
+    color: var(--accent-ink);
+}
+.side-foot {
+    margin-inline-start: calc(-1 * var(--space-2));
+}
+
+.shell.is-wide {
+    grid-template-columns: minmax(0, 1fr);
+}
+.shell.is-wide .side {
+    display: none;
+}
+
+.side {
+    view-transition-name: side;
+}
+.work {
+    view-transition-name: work;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.work-empty {
+    margin: auto;
+}
+
+/* ── one piece ────────────────────────────────────────────────────────── */
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-6);
+}
+.bar {
+    transition:
+        opacity 400ms var(--ease-standard),
+        filter 600ms var(--ease-focus, ease-out);
+}
+/* While writing, the bar steps back; moving the pointer, or reaching it by keyboard, brings it back. */
+.editor.is-typing .bar:not(:focus-within) {
+    opacity: 0;
+    filter: blur(3px);
+}
+.bar .back {
+    display: none;
+}
+.save-note {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.save-note.save-error {
+    color: var(--danger);
+}
+.banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-6) var(--space-2);
+    color: var(--danger);
+    font-size: 0.8125rem;
+}
+
+.editor-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-8) var(--space-6) var(--space-32);
+}
+/* The same column, sizes and type as a reading page. */
+.sheet {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 44rem;
+    margin-inline: auto;
+}
+.sheet textarea {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text);
+    resize: none;
+    overflow: hidden;
+}
+.sheet textarea:focus {
+    outline: none;
+}
+.sheet textarea::placeholder {
+    color: var(--text-disabled);
+}
+.title-input {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5.2vw, 2.75rem);
+    line-height: 1.15;
+    font-weight: 300;
+    letter-spacing: -0.025em;
+}
+.summary-input {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2.6vw, 1.3125rem);
+    line-height: 1.5;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+}
+.sheet .summary-input {
+    color: var(--text-muted);
+}
+.body-input {
+    border-radius: var(--radius-md);
+    transition: background-color var(--duration-quick) var(--ease-standard);
+    min-height: 50svh;
+    margin-block-start: var(--space-12);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+}
+.sheet .body-input.is-dropping {
+    background: var(--surface-muted);
+}
+.sheet-foot {
+    display: flex;
+    gap: var(--space-1);
+    margin: var(--space-16) 0 0 calc(-1 * var(--space-2));
+}
+
+/* ── a collection's order ─────────────────────────────────────────────── */
+
+.order {
+    margin: var(--space-12) 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: part;
+}
+.order-item {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-block: var(--space-1);
+    counter-increment: part;
+}
+.order.is-sorting {
+    user-select: none;
+}
+.order.is-sorting .order-item {
+    transition: transform var(--duration-quick) var(--ease-standard);
+}
+.order.is-sorting .order-item.is-lifted {
+    position: relative;
+    z-index: 1;
+    transition: none;
+    background: var(--surface);
+    cursor: grabbing;
+}
+.order-item.is-lifted .order-title {
+    color: var(--accent-ink);
+    cursor: grabbing;
+}
+.order-item::before {
+    content: counter(part, decimal-leading-zero);
+    width: 2.5rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+.order-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: var(--font-display);
+    font-size: 1.1875rem;
+    font-weight: 300;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.order-item.is-draft .order-title {
+    color: var(--text-muted);
+}
+.order-title:hover {
+    color: var(--accent-ink);
+}
+.tool {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: var(--radius-full);
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--duration-quick) var(--ease-standard);
+}
+/* The row's controls appear when the row is pointed at or focused, so the list reads as a list. */
+.order-item:hover .tool,
+.order-item:focus-within .tool {
+    opacity: 1;
+}
+.tool:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+.tool:disabled {
+    visibility: hidden;
+}
+/* A mouse drags rows into place (or ⌥↑ ⌥↓ from the keyboard); a finger gets the arrows. */
+.tool.step {
+    display: none;
+}
+@media (hover: none) {
+    .tool {
+        opacity: 1;
+    }
+    .tool.step {
+        display: inline-flex;
+    }
+}
+.adder {
+    align-self: flex-start;
+    margin: var(--space-3) 0 0 2.5rem;
+    padding: var(--space-1) 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+.adder:hover {
+    color: var(--text);
+}
+
+/* ── narrow screens: the list, or the piece, never both ───────────────── */
+
+@media (max-width: 860px) {
+    .shell {
+        grid-template-columns: 1fr;
+    }
+    .shell.has-item .side,
+    .shell:not(.has-item) .work {
+        display: none;
+    }
+    .bar {
+        padding-inline: var(--space-3);
+    }
+    .bar .back {
+        display: inline-flex;
+    }
+    .editor-scroll {
+        padding-inline: var(--space-6);
+        padding-block-start: var(--space-4);
+    }
+    /* On a phone the list and the page take turns, so the list moves like a page too. */
+    ::view-transition-old(side) {
+        animation:
+            vt-fade-out var(--vt-out) var(--ease-leave) both,
+            vt-blur-out var(--vt-out) var(--ease-leave) both,
+            vt-drift-out var(--vt-out) var(--ease-leave) both;
+    }
+    ::view-transition-new(side) {
+        animation:
+            vt-fade-in calc(var(--vt-in) * 0.55) var(--ease-focus) calc(var(--vt-out) * 0.4) both,
+            vt-blur-in var(--vt-in) var(--ease-focus) calc(var(--vt-out) * 0.4) both,
+            vt-drift-in var(--vt-in) var(--ease-spring) calc(var(--vt-out) * 0.4) both;
+    }
+}
