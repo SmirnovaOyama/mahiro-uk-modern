@@ -1,0 +1,125 @@
+/* How one page gives way to the next: the old one softens and goes out of focus,
+   the new one comes into focus as it settles. Opacity, blur and movement each
+   run on their own curve and clock, so focus arrives a moment after the
+   page has nearly landed, the way an eye catches up.
+
+   Page to page (the sentence, the blog) this is the browser's cross-document
+   view transition; within the editor, a same-document one. Where neither
+   exists, pages simply change, as they always have. */
+
+:root {
+    /* A soft spring: quick to start, a hair past the mark, then still. */
+    --ease-spring: linear(
+        0, 0.012 0.9%, 0.05 2%, 0.11 3.2%, 0.27 5.9%, 0.45 9%, 0.62 12.4%, 0.76 16%, 0.86 19.8%, 0.93 23.8%,
+        0.975 28%, 1.002 32.6%, 1.016 37.6%, 1.02 43%, 1.016 49.6%, 1.009 57%, 1.003 66%, 1.0005 77%, 1
+    );
+    /* Fast away, long settle. */
+    --ease-focus: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Gathers speed as it leaves. */
+    --ease-leave: cubic-bezier(0.55, 0, 0.75, 0.3);
+
+    --vt-out: 220ms;
+    --vt-in: 620ms;
+    --vt-shift: 0px;
+}
+
+@view-transition {
+    navigation: auto;
+}
+
+/* The header and the collection's bar stay where they are while the page beneath them changes. */
+.reading-top {
+    view-transition-name: reading-top;
+}
+.series-bar {
+    view-transition-name: series-bar;
+}
+
+/* ── the page going ───────────────────────────────────────────────────── */
+
+::view-transition-old(root),
+::view-transition-old(work) {
+    animation:
+        vt-fade-out var(--vt-out) var(--ease-leave) both,
+        vt-blur-out var(--vt-out) var(--ease-leave) both,
+        vt-drift-out var(--vt-out) var(--ease-leave) both;
+}
+
+/* ── the page coming ──────────────────────────────────────────────────── */
+
+::view-transition-new(root),
+::view-transition-new(work) {
+    animation:
+        vt-fade-in calc(var(--vt-in) * 0.55) var(--ease-focus) calc(var(--vt-out) * 0.4) both,
+        vt-blur-in var(--vt-in) var(--ease-focus) calc(var(--vt-out) * 0.4) both,
+        vt-drift-in var(--vt-in) var(--ease-spring) calc(var(--vt-out) * 0.4) both;
+}
+
+/* The two pictures are drawn one over the other, not blended. */
+::view-transition-image-pair(root),
+::view-transition-image-pair(work) {
+    isolation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-old(work),
+::view-transition-new(work) {
+    mix-blend-mode: normal;
+}
+
+/* Forward (deeper, or the next part) comes in from the right; back, from the left. */
+html:active-view-transition-type(forward) {
+    --vt-shift: 28px;
+}
+html:active-view-transition-type(back) {
+    --vt-shift: -28px;
+}
+
+/* The bar beside a page: its words change in place, without the page's blur. */
+::view-transition-group(series-bar),
+::view-transition-group(reading-top) {
+    animation-duration: 320ms;
+    animation-timing-function: var(--ease-focus);
+}
+
+@keyframes vt-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+@keyframes vt-blur-out {
+    to {
+        filter: blur(12px) saturate(0.9);
+    }
+}
+@keyframes vt-drift-out {
+    to {
+        transform: translate(calc(var(--vt-shift) * -0.5), -6px) scale(0.985);
+    }
+}
+@keyframes vt-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+@keyframes vt-blur-in {
+    from {
+        filter: blur(16px) saturate(1.1);
+    }
+}
+@keyframes vt-drift-in {
+    from {
+        transform: translate(var(--vt-shift), 14px) scale(1.01);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition {
+        navigation: none;
+    }
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+}

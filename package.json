@@ -4,17 +4,29 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "npm run db:migrate:local && vite",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",
+    "deploy": "npm run build && wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "tokens": "node scripts/build-tokens.ts",
     "favicon": "node scripts/build-favicon.ts",
     "og": "node scripts/build-og.ts"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.69.1",
+    "@cloudflare/workers-types": "^5.20261113.1",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
-    "vite": "^8.3.7"
+    "vite": "^8.3.7",
+    "wrangler": "^4.161.0"
+  },
+  "dependencies": {
+    "katex": "^0.18.10",
+    "marked": "^18.2.0",
+    "marked-footnote": "^1.4.0",
+    "marked-katex-extension": "^5.1.13",
+    "marked-smartypants": "^1.1.12"
   }
 }

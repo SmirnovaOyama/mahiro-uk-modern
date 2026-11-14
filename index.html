@@ -32,10 +32,41 @@
                 if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
             } catch (e) {}
         </script>
+        <script>
+            // Before the first paint: which way this page comes in. Deeper, or the
+            // next part, is forward (from the right); shallower, the part before, or
+            // Back, from the left. The Worker puts a part's neighbours on <html>.
+            addEventListener('pagereveal', function (e) {
+                var act = window.navigation && navigation.activation;
+                if (!e.viewTransition || !act || !act.from || !act.from.url) return;
+                var from = new URL(act.from.url);
+                if (from.origin !== location.origin) return;
+                var depth = function (path) {
+                    return path.split('/').filter(Boolean).length;
+                };
+                var parts = document.documentElement.dataset;
+                var dir =
+                    act.navigationType === 'traverse'
+                        ? act.entry.index < act.from.index
+                            ? 'back'
+                            : 'forward'
+                        : from.pathname === parts.prev
+                          ? 'forward'
+                          : from.pathname === parts.next
+                            ? 'back'
+                            : depth(location.pathname) > depth(from.pathname)
+                              ? 'forward'
+                              : depth(location.pathname) < depth(from.pathname)
+                                ? 'back'
+                                : '';
+                if (dir) e.viewTransition.types.add(dir);
+            });
+        </script>
         <script type="module" src="/src/main.ts"></script>
     </head>
     <body>
         <header class="top">
+            <a class="btn-ghost" href="/writing">Writing</a>
             <a class="btn-ghost btn-icon" id="gh" rel="me noopener" aria-label="GitHub"></a>
             <button class="btn-ghost btn-icon" id="theme" type="button"></button>
         </header>

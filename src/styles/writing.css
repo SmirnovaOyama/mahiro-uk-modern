@@ -1,0 +1,344 @@
+/* The reading pages: the same white page and the same light type as the
+   sentence, set for reading at length. Builds on site.css. */
+
+.reading-top {
+    justify-content: space-between;
+    align-items: center;
+}
+.reading-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+.home {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-inline-start: calc(-1 * var(--space-1));
+    padding: var(--space-1);
+    border-radius: var(--radius-full);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+.home:hover {
+    color: var(--accent-ink);
+}
+.home-avatar {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+}
+
+main.reading-main {
+    padding-block: calc(4.5rem + clamp(var(--space-8), 11svh, var(--space-16))) var(--space-32);
+}
+
+.page-head {
+    margin-block-end: var(--space-12);
+}
+.page-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5.2vw, 2.75rem);
+    line-height: 1.15;
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+}
+.page-summary {
+    margin-block-start: var(--space-4);
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2.6vw, 1.3125rem);
+    line-height: 1.5;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    color: var(--text-muted);
+    text-wrap: pretty;
+}
+.page-meta {
+    margin-block-start: var(--space-5);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+}
+.section-heading {
+    margin-block: var(--space-16) var(--space-4);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+.preview-note {
+    margin-block-end: var(--space-8);
+    color: var(--accent-ink);
+    font-size: 0.8125rem;
+}
+
+/* ── lists: titles only, in the sentence's own type ───────────────────── */
+
+.titles {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 4.4vw, 2.375rem);
+    line-height: 1.4;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+}
+.titles li + li {
+    margin-block-start: var(--space-2);
+}
+.titles a {
+    border-radius: var(--radius-xs);
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-decoration-thickness: 0.05em;
+    text-underline-offset: 0.2em;
+    text-wrap: pretty;
+    transition:
+        color var(--duration-quick) var(--ease-standard),
+        text-decoration-color var(--duration-quick) var(--ease-standard);
+}
+.titles a:hover {
+    color: var(--accent-ink);
+    text-decoration-color: currentColor;
+}
+
+/* ── a collection, frozen to the bottom of the screen ────────────────
+   The bar itself is .controls from site.css, the same one the home page uses. */
+
+.series-bar .hint {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.series-steps {
+    flex: none;
+    display: flex;
+    gap: var(--space-1);
+    margin-inline-end: calc(-1 * var(--space-2));
+}
+.series-steps .is-off {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+}
+
+
+/* ── the words themselves ────────────────────────────────────────────── */
+
+.prose {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+}
+:lang(zh) .prose {
+    line-height: 1.9;
+}
+.prose > :first-child {
+    margin-block-start: 0;
+}
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre,
+.prose table,
+.prose figure {
+    margin-block: 0 1.25em;
+}
+.prose h2,
+.prose h3,
+.prose h4 {
+    margin-block: 2.2em 0.6em;
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    scroll-margin-top: 6rem;
+}
+.prose h1 {
+    margin-block: 2em 0.6em;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 300;
+    line-height: 1.25;
+}
+.prose h2 {
+    font-size: 1.5rem;
+}
+.prose h3 {
+    font-size: 1.1875rem;
+}
+.prose h4 {
+    font-size: 1rem;
+    font-weight: 500;
+}
+.prose a {
+    border-radius: var(--radius-xs);
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.2em;
+    transition:
+        color var(--duration-quick) var(--ease-standard),
+        text-decoration-color var(--duration-quick) var(--ease-standard);
+}
+.prose a:hover {
+    color: var(--accent-ink);
+    text-decoration-color: currentColor;
+}
+.prose ul,
+.prose ol {
+    padding-inline-start: 1.4em;
+}
+.prose li + li {
+    margin-block-start: 0.3em;
+}
+.prose li > ul,
+.prose li > ol {
+    margin-block: 0.3em 0;
+}
+.prose blockquote {
+    margin-inline: 0;
+    padding-inline-start: 1.1em;
+    border-inline-start: 2px solid var(--border-strong);
+    color: var(--text-muted);
+}
+.prose hr {
+    margin-block: 3em;
+    border: none;
+    border-block-start: 1px dotted var(--border-strong);
+}
+.prose img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-inline: auto;
+    border-radius: var(--radius-md);
+}
+.prose code {
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-xs);
+    background: var(--surface-muted);
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+}
+.prose pre {
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+    overflow-x: auto;
+    line-height: 1.55;
+}
+.prose pre code {
+    padding: 0;
+    background: none;
+    font-size: 0.85rem;
+}
+.prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+.prose th,
+.prose td {
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--border);
+    text-align: start;
+}
+.prose th {
+    font-weight: 500;
+}
+.prose input[type='checkbox'] {
+    margin-inline-end: 0.4em;
+}
+.prose li:has(> input[type='checkbox']) {
+    list-style: none;
+    margin-inline-start: -1.4em;
+}
+
+/* A quiet # beside each heading, for linking to it. */
+.prose .anchor {
+    margin-inline-start: 0.35em;
+    color: var(--text-disabled);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity var(--duration-quick) var(--ease-standard);
+}
+.prose :is(h1, h2, h3, h4):hover .anchor,
+.prose .anchor:focus-visible {
+    opacity: 1;
+}
+.prose .anchor:hover {
+    color: var(--accent-ink);
+}
+@media (hover: none) {
+    .prose .anchor {
+        display: none;
+    }
+}
+
+.prose figure {
+    margin-inline: 0;
+}
+.prose figcaption {
+    margin-block-start: var(--space-3);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+/* Footnotes: small numbers in the text, the notes gathered at the end. */
+.prose sup {
+    line-height: 0;
+}
+.prose [data-footnote-ref] {
+    padding-inline: 0.15em;
+    font-size: 0.75em;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+}
+.prose .footnotes {
+    margin-block-start: 3em;
+    padding-block-start: 1.5em;
+    border-block-start: 1px dotted var(--border-strong);
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+}
+.prose .footnotes p {
+    margin: 0;
+}
+.prose [data-footnote-backref] {
+    text-decoration: none;
+}
+.prose :target {
+    scroll-margin-top: 6rem;
+}
+.prose li:target {
+    color: var(--text);
+}
+
+/* LaTeX, set by KaTeX. Its own stylesheet comes only with pages that have math. */
+.prose .katex {
+    font-size: 1.08em;
+}
+.prose .katex-display {
+    margin-block: 1.4em;
+    /* A wide equation scrolls on a narrow screen instead of widening the page. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.2em;
+}
+.prose .katex-error {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+}

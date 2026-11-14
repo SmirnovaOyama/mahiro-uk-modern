@@ -1,0 +1,112 @@
+/* The right-click menu: the same card as the word before leaving, smaller. */
+
+.menu {
+    position: fixed;
+    z-index: var(--z-menu);
+    display: flex;
+    flex-direction: column;
+    min-width: 11rem;
+    max-width: min(18rem, calc(100vw - 1rem));
+    padding: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    animation: menu-in 260ms var(--ease-spring, var(--ease-out)) both;
+}
+.menu:focus {
+    outline: none;
+}
+.menu.is-leaving {
+    pointer-events: none;
+    animation: menu-out 140ms var(--ease-leave, var(--ease-standard)) both;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+    min-height: 1.875rem;
+    padding: 0 0.625rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: start;
+    cursor: default;
+}
+.menu-item:focus {
+    outline: none;
+    background: var(--surface-hover);
+}
+.menu-item:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.menu-item:disabled {
+    color: var(--text-disabled);
+}
+.menu-item.is-danger:focus {
+    color: var(--danger);
+}
+.menu-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.menu-keys {
+    color: var(--text-disabled);
+    font-family: inherit;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+}
+.menu-gap {
+    height: 1px;
+    margin: var(--space-1) var(--space-2);
+    background: var(--border);
+}
+
+/* What a menu item did, said where the menu was. */
+.menu-echo {
+    position: fixed;
+    z-index: var(--z-menu);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.75rem;
+    font-weight: 500;
+    pointer-events: none;
+    animation: menu-in 160ms var(--ease-out) both;
+}
+.menu-echo.is-leaving {
+    animation: menu-out 300ms var(--ease-standard) both;
+}
+
+/* Comes into focus as it opens, goes out of it as it closes. */
+@keyframes menu-in {
+    from {
+        opacity: 0;
+        filter: blur(6px);
+        transform: scale(0.94);
+    }
+}
+@keyframes menu-out {
+    to {
+        opacity: 0;
+        filter: blur(4px);
+        transform: scale(0.98);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .menu,
+    .menu-echo {
+        animation-duration: 1ms;
+    }
+}

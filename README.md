@@ -26,20 +26,50 @@ Requires Node 24 or later (the build scripts are TypeScript run directly by Node
 
 ```bash
 npm install
-npm run dev        # http://localhost:4173
-npm run build      # type-checks, then writes a static site to dist/
-npm run preview    # serves dist/ locally
+cp .dev.vars.example .dev.vars   # the editor's password for local use; never committed
+npm run dev        # http://localhost:4173, with the Worker and a local database
+npm run build      # type-checks the pages and the Worker, then writes dist/
+npm run preview    # serves the built site and Worker locally
 ```
 
-`dist/` is plain HTML, CSS and JavaScript with relative paths, so any static host will serve it.
+`npm run dev` applies any new database migrations to the local database first (`npm run db:migrate:local`). The local database lives in `.wrangler/`.
+
+## Writing
+
+Besides the sentence, the site publishes articles, written in markdown.
+
+- **Readers** find them at `/writing`, each at `/writing/<slug>`, and collections at `/collections/<slug>`. An article in a collection carries a bar frozen to the bottom of the screen, like the one under the sentence, with the way to the parts either side. Feed readers find `/writing/feed.xml`, and search engines `/sitemap.xml`.
+- **The editor** is at `/admin/`, signed in with `ADMIN_PASSWORD`. An article is a title, a summary and its markdown, set in the reading page's type. It saves as you type (⌘S saves at once); ⌘B, ⌘I, ⌘K and ⌘E format, and lists carry on when you press Enter. Paste or drop a picture into the text and it is uploaded and linked where the caret is. While you type, the bar above steps back until the pointer moves; ⌘\\ puts the list away altogether. A new article left blank is thrown away when you leave it.
+- **Markdown** is GitHub's, plus footnotes (`text[^1]` and `[^1]: the note`), typographer's quotes and dashes, and figures: a picture on a line of its own with a title, `![alt](src "Caption")`, gets that caption under it. LaTeX goes between dollar signs, `$e^{i\pi}$` in a line, `$$ … $$` or a ```` ```math ```` block for one of its own; KaTeX sets it when the article is published, and its styles and fonts load only on pages that have math. A price like $5 is left alone.
+- **Publishing.** Readers see an article only once it's published, and edits to a published article stay out of sight until you press Publish changes. Discard changes puts the working copy back to what readers see. Unpublish takes it down; nothing is deleted.
+- **Addresses** are made from the title, and fixed once an article has been published, so links to it keep working.
+- **Collections** are articles in reading order: drag a row to move it, or use ⌥↑ and ⌥↓ (on a phone, the arrows beside it). Readers see only the published ones.
+
+- **Moving between pages** (the sentence, the blog, pieces in the editor), the old page drifts and goes out of focus while the new one settles and comes into focus, opacity, blur and movement each on their own curve ([`src/styles/motion.css`](src/styles/motion.css)). Going deeper or to the next part comes in from the right, going back from the left. It uses the browser's view transitions, so browsers without them simply change page, and it is off for anyone who asks for less motion.
+- **Right-click** brings up a small menu of what fits where you clicked: formatting and pictures in the text, open, preview, copy link or delete on an article in the list, moving a row in a collection, and on reading pages a link to the page or the section you're in, the parts either side and the theme. Links, pictures and selected words keep the browser's own menu, and so does a right-click with Shift held, a second right-click, or a long press on a phone.
+
+Signing in sets a signed, HttpOnly, SameSite=Strict cookie that lasts 30 days. Setting or changing `SESSION_SECRET` signs every session out.
 
 ## Deploying
 
-The site is deployed on Cloudflare. [`wrangler.jsonc`](wrangler.jsonc) tells `wrangler deploy` to upload `dist/` as static assets, with no Worker script, so Cloudflare's build only needs `npm run build` as the build command and `npx wrangler deploy` as the deploy command. To check a deploy without publishing it:
+The site is deployed on Cloudflare as a Worker with static assets, a D1 database for the writing and an R2 bucket for its pictures. Static files (the sentence, the editor's page, pictures) are served directly; only the paths listed in `run_worker_first` in [`wrangler.jsonc`](wrangler.jsonc) reach the Worker ([`worker/index.ts`](worker/index.ts)).
+
+The database (`mahiro-uk-writing`) and picture bucket (`mahiro-uk-media`) already exist, with their ids in `wrangler.jsonc`; pull-request previews built by Workers Builds (`wrangler preview`) use a separate pair, `mahiro-uk-writing-preview` and `mahiro-uk-media-preview`, so a preview never touches the live site. The one thing left to do once is the editor's password:
 
 ```bash
-npm run build && npx wrangler deploy --dry-run
+npx wrangler secret put ADMIN_PASSWORD
+npx wrangler secret put SESSION_SECRET          # optional: any long random string
 ```
+
+A new file in `migrations/` is applied to the live database by `npm run deploy`; apply it to the preview database too, through a config that names it as `DB`.
+
+Then, for each deploy:
+
+```bash
+npm run deploy     # builds, applies migrations to the live database, deploys
+```
+
+In Cloudflare's own build, use `npm run build` as the build command and `npx wrangler d1 migrations apply DB --remote && npx wrangler deploy` as the deploy command.
 
 ## Changing the words
 
@@ -92,14 +122,22 @@ Rerun it whenever the opening sentence changes. The tags in `index.html` point a
 
 ```
 index.html            the page shell
+page.html             the shell the Worker fills in for every reading page
+admin/index.html      the editor's page
 src/main.ts           builds the sentence, the bottom hint, the leaving-the-site note and the theme switch
+src/page.ts           the reading pages' script (just the theme switch)
+src/theme.ts          the light/dark switch, shared by every page
+src/admin/            the editor: sign-in, lists, the article and collection editors, autosave
+src/shared/           markdown rendering and the API's types, shared by the editor and the Worker
+worker/               the Worker: routes, sign-in, database queries, pictures, reading pages, the feed and the sitemap
+migrations/           the D1 database's tables
 src/i18n.ts           every word on the page
 src/config.ts         links, email, time zone
 src/transition.ts     the letter-by-letter animation
 src/cat.ts            the pixel cats, ported from the tracker
 src/doodle.ts         hand-drawn icons
 src/icons.ts          Lucide outlines and the GitHub mark
-src/styles/           generated tokens, the cats' motion, and the site's own styles
+src/styles/           generated tokens, the cats' motion, the site's own styles, reading pages and the editor
 src/dev/awkward.ts    development-only layout checks
 og.html, src/og.ts    the link preview picture, as a page
 scripts/              token, favicon and link-preview generators

@@ -1,0 +1,75 @@
+<!doctype html>
+<!-- The shell of every reading page. The Worker (worker/pages.ts) fills in the
+     title, the descriptions, the address and <main>; opened on its own it is empty. -->
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>Anya’s Blog</title>
+        <meta name="description" content="" />
+        <meta name="robots" content="noindex" />
+        <meta name="color-scheme" content="light dark" />
+        <link rel="canonical" href="https://mahiro.uk/writing" />
+        <link rel="alternate" type="application/atom+xml" title="Anya’s Blog" href="/writing/feed.xml" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://mahiro.uk/writing" />
+        <meta property="og:site_name" content="Anya’s Blog" />
+        <meta property="og:title" content="Writing" />
+        <meta property="og:description" content="" />
+        <meta property="og:image" content="https://mahiro.uk/og.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Writing" />
+        <meta name="twitter:description" content="" />
+        <meta name="twitter:image" content="https://mahiro.uk/og.png" />
+        <link rel="icon" href="/favicon.png?v=3" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script>
+            try {
+                var theme = localStorage.getItem('site-theme');
+                if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+            } catch (e) {}
+        </script>
+        <script>
+            // Before the first paint: which way this page comes in. Deeper, or the
+            // next part, is forward (from the right); shallower, the part before, or
+            // Back, from the left. The Worker puts a part's neighbours on <html>.
+            addEventListener('pagereveal', function (e) {
+                var act = window.navigation && navigation.activation;
+                if (!e.viewTransition || !act || !act.from || !act.from.url) return;
+                var from = new URL(act.from.url);
+                if (from.origin !== location.origin) return;
+                var depth = function (path) {
+                    return path.split('/').filter(Boolean).length;
+                };
+                var parts = document.documentElement.dataset;
+                var dir =
+                    act.navigationType === 'traverse'
+                        ? act.entry.index < act.from.index
+                            ? 'back'
+                            : 'forward'
+                        : from.pathname === parts.prev
+                          ? 'forward'
+                          : from.pathname === parts.next
+                            ? 'back'
+                            : depth(location.pathname) > depth(from.pathname)
+                              ? 'forward'
+                              : depth(location.pathname) < depth(from.pathname)
+                                ? 'back'
+                                : '';
+                if (dir) e.viewTransition.types.add(dir);
+            });
+        </script>
+        <script type="module" src="/src/page.ts"></script>
+    </head>
+    <body class="reading">
+        <header class="top reading-top">
+            <a class="home" href="/writing"><img class="home-avatar" src="/avatar.jpg" alt="" width="64" height="64" />Anya’s Blog</a>
+            <nav class="reading-nav">
+                <a class="btn-ghost" href="/">Home</a>
+                <button class="btn-ghost btn-icon" id="theme" type="button"></button>
+            </nav>
+        </header>
+
+        <main class="reading-main" id="page"></main>
+    </body>
+</html>

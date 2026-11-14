@@ -1,15 +1,16 @@
 import './styles/tokens.css';
 import './styles/cat.css';
 import './styles/site.css';
+import './styles/motion.css';
 
 import config from './config.ts';
 import { catStateForHour, drawCat } from './cat.ts';
 import { doodle } from './doodle.ts';
 import { copy, locale } from './i18n.ts';
-import { githubMark, icon } from './icons.ts';
+import { githubMark } from './icons.ts';
+import { mountThemeButton } from './theme.ts';
 import { formatHour, hourNowAt } from './time.ts';
 import { transition } from './transition.ts';
-import type { Theme } from './types.ts';
 
 const $ = <T extends Element = HTMLElement>(id: string): T => {
     const el = document.getElementById(id);
@@ -290,39 +291,13 @@ addEventListener('resize', () => closeLeave(false));
 
 // ── theme ──────────────────────────────────────────────────────────────
 
-const darkQuery = matchMedia('(prefers-color-scheme: dark)');
-const currentTheme = (): Theme => {
-    const set = document.documentElement.dataset.theme;
-    return set === 'light' || set === 'dark' ? set : darkQuery.matches ? 'dark' : 'light';
-};
-
-function renderChrome(): void {
-    const ui = copy().ui;
-    const theme = currentTheme();
-    const themeButton = $<HTMLButtonElement>('theme');
-    themeButton.innerHTML = icon(theme === 'dark' ? 'sun' : 'moon', 18);
-    themeButton.setAttribute('aria-label', theme === 'dark' ? ui.toLight : ui.toDark);
-
-    document.querySelector('meta[name="description"]')?.setAttribute('content', ui.description);
-}
-
-$('theme').addEventListener('click', () => {
-    const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    try {
-        localStorage.setItem('site-theme', next);
-    } catch {
-        // The choice then lasts for this visit only.
-    }
-    renderChrome();
-});
-darkQuery.addEventListener('change', renderChrome);
+mountThemeButton($<HTMLButtonElement>('theme'), () => copy().ui);
+document.querySelector('meta[name="description"]')?.setAttribute('content', copy().ui.description);
 
 const gh = $<HTMLAnchorElement>('gh');
 gh.href = config.github;
 gh.innerHTML = githubMark('', 18);
 
-renderChrome();
 render();
 window.setInterval(tick, 20_000);
 

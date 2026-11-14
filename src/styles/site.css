@@ -315,6 +315,7 @@ main {
     color: var(--text-muted);
     font-size: 0.875rem;
     font-weight: 500;
+    text-decoration: none;
     cursor: pointer;
     transition:
         background-color var(--duration-quick) var(--ease-standard),
@@ -368,7 +369,7 @@ main {
     box-shadow: var(--shadow-md);
     font-size: 0.875rem;
     line-height: 1.25rem;
-    animation: leave-in 200ms var(--ease-out) both;
+    animation: leave-in 320ms var(--ease-spring, var(--ease-out)) both;
 }
 .leave[hidden] {
     display: none;
@@ -389,7 +390,8 @@ main {
 @keyframes leave-in {
     from {
         opacity: 0;
-        transform: translateY(-4px);
+        filter: blur(6px);
+        transform: translateY(-4px) scale(0.98);
     }
     to {
         opacity: 1;
