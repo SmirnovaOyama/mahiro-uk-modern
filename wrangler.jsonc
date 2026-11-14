@@ -18,12 +18,25 @@
         {
             "binding": "DB",
             "database_name": "mahiro-uk-writing",
-            "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+            "database_id": "c64763e1-3419-40e0-b7e8-23bbc28e5ccd",
             "migrations_dir": "migrations"
         }
     ],
     // Pictures pasted or dropped into an article. Create the bucket once with
     // `npx wrangler r2 bucket create mahiro-uk-media`.
     "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "mahiro-uk-media" }],
+    // What pull-request previews (`wrangler preview`) use instead: a database and
+    // bucket of their own, so a preview never reads or writes the live site's.
+    "previews": {
+        "d1_databases": [
+            {
+                "binding": "DB",
+                "database_name": "mahiro-uk-writing-preview",
+                "database_id": "60ca81b0-e6c3-44b8-9f7d-22264e6f2f01",
+                "migrations_dir": "migrations"
+            }
+        ],
+        "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "mahiro-uk-media-preview" }]
+    },
     "observability": { "enabled": true }
 }

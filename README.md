@@ -54,14 +54,14 @@ Signing in sets a signed, HttpOnly, SameSite=Strict cookie that lasts 30 days. S
 
 The site is deployed on Cloudflare as a Worker with static assets, a D1 database for the writing and an R2 bucket for its pictures. Static files (the sentence, the editor's page, pictures) are served directly; only the paths listed in `run_worker_first` in [`wrangler.jsonc`](wrangler.jsonc) reach the Worker ([`worker/index.ts`](worker/index.ts)).
 
-Once, before the first deploy:
+The database (`mahiro-uk-writing`) and picture bucket (`mahiro-uk-media`) already exist, with their ids in `wrangler.jsonc`; pull-request previews built by Workers Builds (`wrangler preview`) use a separate pair, `mahiro-uk-writing-preview` and `mahiro-uk-media-preview`, so a preview never touches the live site. The one thing left to do once is the editor's password:
 
 ```bash
-npx wrangler d1 create mahiro-uk-writing        # paste the id it prints into wrangler.jsonc
-npx wrangler r2 bucket create mahiro-uk-media
 npx wrangler secret put ADMIN_PASSWORD
 npx wrangler secret put SESSION_SECRET          # optional: any long random string
 ```
+
+A new file in `migrations/` is applied to the live database by `npm run deploy`; apply it to the preview database too, through a config that names it as `DB`.
 
 Then, for each deploy:
 
