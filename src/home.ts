@@ -1,7 +1,6 @@
-import './styles/tokens.css';
+// The sentence: the site's front page, unfolding phrase by phrase. What's been
+// unfolded is remembered for the visit, so coming back finds it as it was left.
 import './styles/cat.css';
-import './styles/site.css';
-import './styles/motion.css';
 
 import config from './config.ts';
 import { catStateForHour, drawCat } from './cat.ts';
@@ -54,7 +53,7 @@ const appIcon = (src: string) => (): Node => picture(src, 'app-icon', 48);
 
 // Load and decode both pictures as soon as the page opens, so neither is ever
 // shown, or copied for the animation, before its pixels are ready.
-for (const [src, className, size] of [['avatar.jpg', 'avatar', 128], ['icons/hrt.png', 'app-icon', 48]] as const) {
+for (const [src, className, size] of [['/avatar.jpg', 'avatar', 128], ['/icons/hrt.png', 'app-icon', 48]] as const) {
     picture(src, className, size).decode().catch(() => {});
 }
 
@@ -77,7 +76,7 @@ const links: Record<string, Link> = {
     email: { href: `mailto:${config.email}`, display: config.email, icon: mailIcon },
 };
 // The tracker's own app icon, copied from its repository (public/apple-touch-icon.png).
-links.hrt!.icon = appIcon('icons/hrt.png');
+links.hrt!.icon = appIcon('/icons/hrt.png');
 
 // ── live values: my clock and the cat ──────────────────────────────────
 
@@ -104,7 +103,7 @@ function tick(): void {
 
 // ── the unfolding sentence ─────────────────────────────────────────────
 
-const text = $('text');
+let text: HTMLElement;
 const open = new Set<string>();
 
 function append(template: string, into: Element, values: Record<string, string>): void {
@@ -135,7 +134,7 @@ function append(template: string, into: Element, values: Record<string, string>)
             }
         } else if (kind === '$') {
             if (name === 'avatar') {
-                into.append(picture('avatar.jpg', 'avatar', 128));
+                into.append(picture('/avatar.jpg', 'avatar', 128));
             } else if (name === 'catpic') {
                 const svg = document.createElementNS(SVG, 'svg');
                 svg.classList.add('cat-inline');
@@ -218,15 +217,15 @@ function unfoldAll(): void {
 
 // ── a gentle word before leaving the site ─────────────────────────────
 
-const leave = $('leave');
-const leaveGo = $<HTMLAnchorElement>('leave-go');
+let leave: HTMLElement;
+let leaveGo: HTMLAnchorElement;
 let leftFrom: HTMLAnchorElement | null = null;
 
 /** Sites of mine (any part of the email's domain) get a warmer note than the rest of the web. */
 const ownDomain = config.email.split('@')[1] ?? '';
 
 function closeLeave(returnFocus = true): void {
-    if (leave.hidden) return;
+    if (!leave || leave.hidden) return;
     leave.hidden = true;
     if (returnFocus) leftFrom?.focus({ preventScroll: true });
     leftFrom = null;
@@ -270,36 +269,54 @@ function openLeave(link: HTMLAnchorElement): void {
     leaveGo.focus({ preventScroll: true });
 }
 
-document.addEventListener('click', event => {
-    const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
-    if (link && link !== leaveGo && /^https?:/.test(link.href) && new URL(link.href).host !== location.host) {
-        // A deliberate new-tab click already knows where it is going.
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-        event.preventDefault();
-        openLeave(link);
-        return;
-    }
-    if (!leave.hidden && !leave.contains(event.target as Node)) closeLeave(false);
-});
-leaveGo.addEventListener('click', () => closeLeave(false));
-$('leave-stay').addEventListener('click', () => closeLeave());
-document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') closeLeave();
-});
-addEventListener('scroll', () => closeLeave(false), { passive: true });
-addEventListener('resize', () => closeLeave(false));
+// ── on screen ──────────────────────────────────────────────────────────
 
-// ── theme ──────────────────────────────────────────────────────────────
+/** Sets the sentence up in the page now showing; returns how to take it down. */
+export function mountHome(): () => void {
+    text = $('text');
+    leave = $('leave');
+    leaveGo = $<HTMLAnchorElement>('leave-go');
+    const away = new AbortController();
+    const signal = away.signal;
 
-mountThemeButton($<HTMLButtonElement>('theme'), () => copy().ui);
-document.querySelector('meta[name="description"]')?.setAttribute('content', copy().ui.description);
+    document.addEventListener(
+        'click',
+        event => {
+            const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
+            if (link && link !== leaveGo && /^https?:/.test(link.href) && new URL(link.href).host !== location.host) {
+                // A deliberate new-tab click already knows where it is going.
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                event.preventDefault();
+                openLeave(link);
+                return;
+            }
+            if (!leave.hidden && !leave.contains(event.target as Node)) closeLeave(false);
+        },
+        { signal },
+    );
+    leaveGo.addEventListener('click', () => closeLeave(false));
+    $('leave-stay').addEventListener('click', () => closeLeave());
+    document.addEventListener('keydown', event => event.key === 'Escape' && closeLeave(), { signal });
+    addEventListener('scroll', () => closeLeave(false), { passive: true, signal });
+    addEventListener('resize', () => closeLeave(false), { signal });
 
-const gh = $<HTMLAnchorElement>('gh');
-gh.href = config.github;
-gh.innerHTML = githubMark('', 18);
+    const unTheme = mountThemeButton($<HTMLButtonElement>('theme'), () => copy().ui);
+    document.querySelector('meta[name="description"]')?.setAttribute('content', copy().ui.description);
 
-render();
-window.setInterval(tick, 20_000);
+    const gh = $<HTMLAnchorElement>('gh');
+    gh.href = config.github;
+    gh.innerHTML = githubMark('', 18);
+
+    render();
+    const clock = window.setInterval(tick, 20_000);
+
+    return () => {
+        closeLeave(false);
+        away.abort();
+        unTheme();
+        clearInterval(clock);
+    };
+}
 
 // In development only: `await awkward()` in the console checks every folded state at
 // several widths, and every animation's last frame, for awkward moments.

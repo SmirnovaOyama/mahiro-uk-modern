@@ -124,8 +124,10 @@ Rerun it whenever the opening sentence changes. The tags in `index.html` point a
 index.html            the page shell
 page.html             the shell the Worker fills in for every reading page
 admin/index.html      the editor's page
-src/main.ts           builds the sentence, the bottom hint, the leaving-the-site note and the theme switch
-src/page.ts           the reading pages' script (just the theme switch)
+src/site.ts           the one script for the sentence and the reading pages
+src/router.ts         moves between pages in place: links, Back and Forward, scroll, the handover
+src/home.ts           builds the sentence, the bottom hint, the leaving-the-site note and the theme switch
+src/reading.ts        the reading pages' theme switch and right-click menu
 src/theme.ts          the light/dark switch, shared by every page
 src/admin/            the editor: sign-in, lists, the article and collection editors, autosave
 src/shared/           markdown rendering and the API's types, shared by the editor and the Worker

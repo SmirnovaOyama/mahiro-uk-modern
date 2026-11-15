@@ -15,8 +15,8 @@ export interface ThemeLabels {
     toLight: string;
 }
 
-/** Draws the button for the theme now showing, and keeps it right as the theme changes. */
-export function mountThemeButton(button: HTMLButtonElement, labels: () => ThemeLabels, onChange?: () => void): void {
+/** Draws the button for the theme now showing, and keeps it right as the theme changes. Returns how to let it go. */
+export function mountThemeButton(button: HTMLButtonElement, labels: () => ThemeLabels, onChange?: () => void): () => void {
     const paint = (): void => {
         const theme = currentTheme();
         button.innerHTML = icon(theme === 'dark' ? 'sun' : 'moon', 18);
@@ -35,4 +35,5 @@ export function mountThemeButton(button: HTMLButtonElement, labels: () => ThemeL
     });
     darkQuery.addEventListener('change', paint);
     paint();
+    return () => darkQuery.removeEventListener('change', paint);
 }
