@@ -4,6 +4,8 @@ import config from '../src/config.ts';
 import { icon } from '../src/icons.ts';
 import katex from 'katex';
 import { escapeHtml as esc, hasMath, renderMarkdown } from '../src/shared/markdown.ts';
+import type { Friend } from '../src/shared/api.ts';
+import { friendHref, hostOf } from '../src/shared/friends.ts';
 
 const KATEX_VERSION = katex.version;
 import type { LiveArticle, LiveCollection, LiveListing } from './db.ts';
@@ -130,6 +132,24 @@ ${titles(c.articles.map(a => ({ href: articleHref(a), title: a.title })), true)}
     };
 }
 
+/** The people the blog points to, or null while there's nobody to show. */
+export function friendsPage(friends: Friend[]): Page | null {
+    const shown = friends.flatMap(f => {
+        const href = friendHref(f.url);
+        return href ? [{ href, name: f.name.trim() || hostOf(href), note: f.note.trim() || hostOf(href) }] : [];
+    });
+    if (!shown.length) return null;
+    return {
+        title: 'Friends',
+        description: 'Friends of Anya’s Blog.',
+        path: '/friends',
+        main: `<header class="page-head"><h1 class="page-title">Friends</h1></header>
+<ul class="titles friends">${shown
+            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${esc(f.name)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
+            .join('')}</ul>`,
+    };
+}
+
 export const notFound = (): Page => ({
     title: 'Not found',
     description: 'Not found.',
@@ -142,7 +162,14 @@ export const notFound = (): Page => ({
 /** Fills the built page.html. */
 export async function respond(env: Env, request: Request, page: Page): Promise<Response> {
     const url = new URL(request.url);
-    const template = await env.ASSETS.fetch(new URL('/page', url));
+    const [template, friends] = await Promise.all([
+        env.ASSETS.fetch(new URL('/page', url)),
+        // The way to the friends page appears once there's someone on it.
+        env.DB.prepare('SELECT url FROM friends')
+            .all<{ url: string }>()
+            .then(r => r.results.some(f => friendHref(f.url)))
+            .catch(() => false),
+    ]);
     if (!template.ok) return new Response('The page template is missing. Run `npm run build`.', { status: 500 });
     const canonical = new URL(page.path, url).href;
 
@@ -151,6 +178,13 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
             element: e => {
                 if (page.prev) e.setAttribute('data-prev', page.prev);
                 if (page.next) e.setAttribute('data-next', page.next);
+            },
+        })
+        .on('.reading-nav', {
+            element: e => {
+                if (!friends) return;
+                const here = page.path === '/friends' ? ' aria-current="page"' : '';
+                e.prepend(`<a class="btn-ghost" href="/friends"${here}>Friends</a>`, { html: true });
             },
         })
         .on('title', { element: e => void e.setInnerContent(page.title) })
@@ -228,7 +262,7 @@ ${entries}
     return new Response(xml, { headers: { 'content-type': 'application/atom+xml; charset=utf-8', 'cache-control': 'public, max-age=300' } });
 }
 
-export function sitemap(origin: string, articles: LiveListing[], collections: LiveCollection[]): Response {
+export function sitemap(origin: string, articles: LiveListing[], collections: LiveCollection[], friends: boolean): Response {
     const entry = (path: string, modified?: number): string =>
         `<url><loc>${esc(origin + path)}</loc>${modified ? `<lastmod>${isoDate(modified)}</lastmod>` : ''}</url>`;
     const newest = (list: LiveListing[]): number => Math.max(0, ...list.map(a => a.republishedAt));
@@ -239,7 +273,10 @@ ${[
     entry('/writing', newest(articles) || undefined),
     ...articles.map(a => entry(articleHref(a), a.republishedAt)),
     ...collections.map(c => entry(`/collections/${encodeURIComponent(c.slug)}`, newest(c.articles))),
-].join('\n')}
+    friends && entry('/friends'),
+]
+    .filter(Boolean)
+    .join('\n')}
 </urlset>`;
     return new Response(xml, { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
 }

@@ -392,6 +392,57 @@ button:disabled {
     color: var(--text);
 }
 
+/* ── friends: a name, the address and a line, each just text to type over ── */
+
+.sheet-title {
+    margin: 0;
+}
+.friends-order .order-item {
+    align-items: flex-start;
+    padding-block: var(--space-3);
+}
+/* The number is where a row is picked up. */
+.friends-order .order-item::before {
+    padding-block-start: 0.45rem;
+    cursor: grab;
+}
+.friend-fields {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+.friend-fields input {
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+}
+.friend-fields input:focus {
+    outline: none;
+    color: var(--text);
+}
+.friend-fields input::placeholder {
+    color: var(--text-disabled);
+}
+.friend-fields .friend-name {
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1.1875rem;
+    font-weight: 300;
+    line-height: 2rem;
+}
+.friend-fields .friend-url.is-off {
+    color: var(--danger);
+}
+.friends-order .tool {
+    margin-block-start: 0.125rem;
+}
+
 /* ── narrow screens: the list, or the piece, never both ───────────────── */
 
 @media (max-width: 860px) {

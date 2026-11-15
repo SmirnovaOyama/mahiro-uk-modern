@@ -44,6 +44,7 @@ Besides the sentence, the site publishes articles, written in markdown.
 - **Publishing.** Readers see an article only once it's published, and edits to a published article stay out of sight until you press Publish changes. Discard changes puts the working copy back to what readers see. Unpublish takes it down; nothing is deleted.
 - **Addresses** are made from the title, and fixed once an article has been published, so links to it keep working.
 - **Collections** are articles in reading order: drag a row to move it, or use ⌥↑ and ⌥↓ (on a phone, the arrows beside it). Readers see only the published ones.
+- **Friends** are a name, an address and a line about each, typed straight into the list and saved as you go; Enter moves down the row and on to a new one. Readers find them at `/friends`, and the blog's header links there once someone's on it. An address that doesn't work yet shows in red and stays off the page.
 
 - **Moving between pages** (the sentence, the blog, pieces in the editor), the old page drifts and goes out of focus while the new one settles and comes into focus, opacity, blur and movement each on their own curve ([`src/styles/motion.css`](src/styles/motion.css)). Going deeper or to the next part comes in from the right, going back from the left. It uses the browser's view transitions, so browsers without them simply change page, and it is off for anyone who asks for less motion.
 - **Right-click** brings up a small menu of what fits where you clicked: formatting and pictures in the text, open, preview, copy link or delete on an article in the list, moving a row in a collection, and on reading pages a link to the page or the section you're in, the parts either side and the theme. Links, pictures and selected words keep the browser's own menu, and so does a right-click with Shift held, a second right-click, or a long press on a phone.
@@ -129,7 +130,7 @@ src/router.ts         moves between pages in place: links, Back and Forward, scr
 src/home.ts           builds the sentence, the bottom hint, the leaving-the-site note and the theme switch
 src/reading.ts        the reading pages' theme switch and right-click menu
 src/theme.ts          the light/dark switch, shared by every page
-src/admin/            the editor: sign-in, lists, the article and collection editors, autosave
+src/admin/            the editor: sign-in, lists, the article, collection and friends editors, autosave
 src/shared/           markdown rendering and the API's types, shared by the editor and the Worker
 worker/               the Worker: routes, sign-in, database queries, pictures, reading pages, the feed and the sitemap
 migrations/           the D1 database's tables

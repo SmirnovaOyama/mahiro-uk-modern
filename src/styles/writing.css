@@ -107,6 +107,26 @@ main.reading-main {
     text-decoration-color: currentColor;
 }
 
+/* Friends: each name with a line under it, in the page's own small type. */
+.titles.friends li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.titles.friends li + li {
+    margin-block-start: var(--space-5);
+}
+.friend-note {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    letter-spacing: 0;
+}
+.reading-nav [aria-current='page'] {
+    color: var(--text);
+}
+
 /* ── a collection, frozen to the bottom of the screen ────────────────
    The bar itself is .controls from site.css, the same one the home page uses. */
 

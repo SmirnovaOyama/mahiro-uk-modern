@@ -1,4 +1,4 @@
-import type { ApiError, Article, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate } from '../shared/api.ts';
+import type { ApiError, Article, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend } from '../shared/api.ts';
 
 export class ApiFailure extends Error {
     constructor(
@@ -57,4 +57,7 @@ export const api = {
     createCollection: (title = '') => call<Collection>('POST', '/api/collections', { title }),
     saveCollection: (id: number, update: CollectionUpdate) => call<Collection>('PUT', `/api/collections/${id}`, update),
     deleteCollection: (id: number) => call<{ deleted: number }>('DELETE', `/api/collections/${id}`),
+
+    friends: () => call<Friend[]>('GET', '/api/friends'),
+    saveFriends: (friends: Friend[]) => call<Friend[]>('PUT', '/api/friends', { friends }),
 };
