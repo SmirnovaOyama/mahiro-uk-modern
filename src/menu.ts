@@ -147,8 +147,8 @@ function echo(word: string, x: number, y: number): void {
  * Listens for right-clicks within `root`. Shift, a second right-click while
  * the menu is open, or a touch, all get the browser's menu instead.
  */
-export function contextMenu(root: Document | HTMLElement, menuFor: MenuFor): void {
-    root.addEventListener('contextmenu', event => {
+export function contextMenu(root: Document | HTMLElement, menuFor: MenuFor): () => void {
+    const listen = (event: Event): void => {
         const e = event as MouseEvent & { pointerType?: string };
         if (e.defaultPrevented || e.shiftKey) return;
         if (e.pointerType === 'touch' || e.pointerType === 'pen') return;
@@ -168,7 +168,12 @@ export function contextMenu(root: Document | HTMLElement, menuFor: MenuFor): voi
             const r = (document.activeElement ?? target).getBoundingClientRect();
             show(entries, r.left + 12, Math.min(r.bottom, r.top + 32), true);
         } else show(entries, e.clientX, e.clientY, false);
-    });
+    };
+    root.addEventListener('contextmenu', listen);
+    return () => {
+        root.removeEventListener('contextmenu', listen);
+        closeMenu();
+    };
 }
 
 /** Copies text, saying so if it worked. */

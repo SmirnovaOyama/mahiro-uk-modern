@@ -259,11 +259,11 @@ function swap(change: () => void, type?: 'forward' | 'back', animate = true): vo
     };
     // If the browser never gets round to the change (a page with no frames to draw), make it anyway.
     setTimeout(update, 1000);
-    type Start = (arg: (() => void) | { update: () => void; types: string[] }) => unknown;
+    type Start = (arg: (() => void) | { update: () => void; types: string[] }) => { ready: Promise<void> };
     const start = (document as Document & { startViewTransition?: Start }).startViewTransition?.bind(document);
     if (!animate || !start || matchMedia('(prefers-reduced-motion: reduce)').matches) return update();
     const typed = typeof ViewTransition !== 'undefined' && 'types' in ViewTransition.prototype;
-    start(typed ? { update, types: type ? [type] : [] } : update);
+    start(typed ? { update, types: type ? [type] : [] } : update).ready.catch(() => {});
 }
 
 let lastHash = '';
