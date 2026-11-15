@@ -96,13 +96,37 @@ function attributes(from: Element, to: Element, keep: string[] = []): void {
     for (const { name, value } of [...from.attributes]) if (!keep.includes(name)) to.setAttribute(name, value);
 }
 
-function replaceDocument(doc: Document): void {
+/**
+ * The next page's body, ready to go in. A new <img> shows blank (white) until
+ * it's decoded, so a picture the next page shares with this one (the avatar
+ * in the header) is carried across as the same element, and any others are
+ * decoded first, for a moment at most.
+ */
+async function prepare(doc: Document): Promise<{ nodes: Node[]; keep: [HTMLImageElement, HTMLImageElement][] }> {
+    const nodes = [...doc.body.childNodes].map(n => document.adoptNode(n));
+    const here = [...document.body.querySelectorAll('img')];
+    const keep: [HTMLImageElement, HTMLImageElement][] = [];
+    const decoding: Promise<unknown>[] = [];
+    for (const node of nodes) {
+        if (!(node instanceof Element)) continue;
+        for (const img of node.querySelectorAll('img')) {
+            const same = here.findIndex(old => old.outerHTML === img.outerHTML);
+            if (same >= 0) keep.push([img, here.splice(same, 1)[0]!]);
+            else if (img.loading !== 'lazy') decoding.push(img.decode().catch(() => {}));
+        }
+    }
+    await Promise.race([Promise.all(decoding), new Promise(done => setTimeout(done, 400))]);
+    return { nodes, keep };
+}
+
+function replaceDocument(doc: Document, { nodes, keep }: Awaited<ReturnType<typeof prepare>>): void {
     document.title = doc.title;
     document.head.querySelectorAll(OWN).forEach(el => el.remove());
     document.head.append(...[...doc.head.querySelectorAll(OWN)].map(el => document.adoptNode(el)));
     attributes(doc.documentElement, document.documentElement, ['data-theme']);
     attributes(doc.body, document.body);
-    document.body.replaceChildren(...[...doc.body.childNodes].map(n => document.adoptNode(n)));
+    for (const [fresh, old] of keep) fresh.replaceWith(old);
+    document.body.replaceChildren(...nodes);
 }
 
 /** The direction a page comes in from: deeper, or the next part, is forward. */
@@ -185,7 +209,7 @@ export function startSite(mountFor: () => Mount): void {
         if (mine !== latest) return;
         const doc = loaded.html ? new DOMParser().parseFromString(loaded.html, 'text/html') : null;
         if (!doc || scripts(doc) !== scripts(document)) return void (kind === 'traverse' ? location.reload() : location.assign(url));
-        await styles(doc);
+        const [, body] = await Promise.all([styles(doc), prepare(doc)]);
         if (mine !== latest) return;
 
         // The page may have answered from a newer address (a renamed article).
@@ -201,7 +225,7 @@ export function startSite(mountFor: () => Mount): void {
 
         await softly(() => {
             unmount();
-            replaceDocument(doc);
+            replaceDocument(doc, body);
             unmount = mountFor()();
             land(at, kind);
         }, type ?? direction(from, at, doc));
