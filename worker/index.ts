@@ -3,18 +3,19 @@
 // these paths here first:
 //
 //   /writing, /writing/:slug, /writing/feed.xml, /collections/:slug   what readers see
+//   /friends                                                          the people the blog points to
 //   /sitemap.xml                                                      for search engines
 //   /media/...                                                        pictures in articles
 //   /admin/preview/:id                                                a draft, for its author
 //   /api/...                                                          the editor's API
-import type { ArticleUpdate, CollectionUpdate } from '../src/shared/api.ts';
+import type { ArticleUpdate, CollectionUpdate, Friend } from '../src/shared/api.ts';
 import { renderMarkdown } from '../src/shared/markdown.ts';
 import { checkPassword, clearCookie, isSignedIn, sameOrigin, sessionCookie } from './auth.ts';
 import * as db from './db.ts';
 import type { Env } from './env.ts';
 import { HttpError, ids, json, optionalTime, readJson, str } from './http.ts';
 import * as media from './media.ts';
-import { articlePage, collectionPage, feed, notFound, respond, sitemap, writingIndex } from './pages.ts';
+import { articlePage, collectionPage, feed, friendsPage, notFound, respond, sitemap, writingIndex } from './pages.ts';
 
 const route = (path: string, pattern: string): Record<string, string> | null => {
     const want = pattern.split('/');
@@ -134,6 +135,21 @@ async function api(request: Request, env: Env, url: URL): Promise<Response> {
         }
     }
 
+    // ── friends
+    if (path === '/api/friends') {
+        if (method === 'GET') return json(await db.listFriends(env.DB));
+        if (method === 'PUT') {
+            const { friends } = await readJson<{ friends?: unknown }>(request);
+            if (!Array.isArray(friends) || friends.length > 500) throw new HttpError(400, 'friends must be a list.', 'friends');
+            const list: Friend[] = friends.map((f: Record<string, unknown>) => ({
+                name: str(f?.name, 'name', 200),
+                url: str(f?.url, 'url', 2000),
+                note: str(f?.note, 'note', 500),
+            }));
+            return json(await db.saveFriends(env.DB, list));
+        }
+    }
+
     throw new HttpError(404, 'There is nothing at this address.');
 }
 
@@ -148,9 +164,10 @@ async function reader(request: Request, env: Env, url: URL): Promise<Response> {
     }
     if (path.startsWith('/media/')) return media.serve(request, env, path.slice('/media/'.length));
     if (path === '/sitemap.xml') {
-        const [articles, collections] = await Promise.all([db.liveArticles(env.DB, now), db.liveCollections(env.DB, now)]);
-        return sitemap(url.origin, articles, collections);
+        const [articles, collections, friends] = await Promise.all([db.liveArticles(env.DB, now), db.liveCollections(env.DB, now), db.listFriends(env.DB)]);
+        return sitemap(url.origin, articles, collections, friendsPage(friends) !== null);
     }
+    if (path === '/friends') return respond(env, request, friendsPage(await db.listFriends(env.DB)) ?? notFound());
     if (path === '/writing/feed.xml') return feed(url.origin, await db.liveArticlesWithBodies(env.DB, now, 30));
     if ((p = route(path, '/writing/:slug'))) {
         const found = await db.liveArticle(env.DB, p.slug!, now);

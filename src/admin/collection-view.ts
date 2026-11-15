@@ -7,6 +7,7 @@ import { grow, type View } from './article-view.ts';
 import type { MenuEntry } from '../menu.ts';
 import { autosave, describe, type SaveState } from './autosave.ts';
 import { h, svg } from './dom.ts';
+import { sortable } from './sortable.ts';
 
 export interface CollectionContext {
     articles: () => ArticleSummary[];
@@ -63,49 +64,7 @@ export function collectionView(initial: Collection, ctx: CollectionContext): Vie
         row?.querySelector<HTMLElement>(focus === 'title' ? '.order-title' : `[data-move="${by}"]`)?.focus();
     }
 
-    // With a mouse, a row is picked up and put down where it belongs; the others make room.
-    let dragged = false;
-    function pickUp(li: HTMLElement, down: PointerEvent): void {
-        if (down.pointerType !== 'mouse' || down.button !== 0 || (down.target as Element).closest('.tool')) return;
-        const rows = [...list.children] as HTMLElement[];
-        const from = rows.indexOf(li);
-        const rects = rows.map(r => r.getBoundingClientRect());
-        const height = rects[from]!.height;
-        let to = from;
-        let lifted = false;
-        const onMove = (e: PointerEvent): void => {
-            const dy = e.clientY - down.clientY;
-            if (!lifted && Math.abs(dy) < 5) return;
-            if (!lifted) {
-                lifted = true;
-                list.classList.add('is-sorting');
-                li.classList.add('is-lifted');
-            }
-            li.style.transform = `translateY(${dy}px)`;
-            const middle = rects[from]!.top + height / 2 + dy;
-            to = rects.filter((r, i) => i !== from && r.top + r.height / 2 < middle).length;
-            rows.forEach((row, i) => {
-                if (i === from) return;
-                const shift = from < to && i > from && i <= to ? -height : from > to && i >= to && i < from ? height : 0;
-                row.style.transform = shift ? `translateY(${shift}px)` : '';
-            });
-        };
-        const onUp = (): void => {
-            removeEventListener('pointermove', onMove);
-            removeEventListener('pointercancel', onUp);
-            removeEventListener('pointerup', onUp);
-            if (!lifted) return;
-            dragged = true;
-            setTimeout(() => (dragged = false));
-            list.classList.remove('is-sorting');
-            rows.forEach(row => (row.style.transform = ''));
-            li.classList.remove('is-lifted');
-            reorder(from, to);
-        };
-        addEventListener('pointermove', onMove);
-        addEventListener('pointerup', onUp);
-        addEventListener('pointercancel', onUp);
-    }
+    const sorter = sortable(list, reorder);
 
     function paintList(): void {
         const byId = new Map(ctx.articles().map(a => [a.id, a]));
@@ -120,7 +79,7 @@ export function collectionView(initial: Collection, ctx: CollectionContext): Vie
                         {
                             class: 'order-title',
                             type: 'button',
-                            onclick: () => dragged || ctx.open(id),
+                            onclick: () => sorter.dragged || ctx.open(id),
                             onkeydown: (e: KeyboardEvent) => {
                                 if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
                                 e.preventDefault();
@@ -146,7 +105,7 @@ export function collectionView(initial: Collection, ctx: CollectionContext): Vie
                         svg(icon('x', 16)),
                     ),
                 );
-                li.addEventListener('pointerdown', e => pickUp(li, e));
+                li.addEventListener('pointerdown', e => sorter.pickUp(li, e));
                 return li;
             }),
         );

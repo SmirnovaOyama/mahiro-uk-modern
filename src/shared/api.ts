@@ -54,6 +54,13 @@ export interface CollectionUpdate {
     updatedAt: number;
 }
 
+/** Someone whose site the blog points to. The address is kept as typed. */
+export interface Friend {
+    name: string;
+    url: string;
+    note: string;
+}
+
 export interface ApiError {
     error: string;
     field?: string;

@@ -1,5 +1,5 @@
 // The editor at /admin/: sign in, then a list on the left and the piece being
-// written on the right. Routes live in the hash: #/articles/12, #/collections/3.
+// written on the right. Routes live in the hash: #/articles/12, #/collections/3, #/friends.
 import '../styles/tokens.css';
 import '../styles/site.css';
 import '../styles/writing.css';
@@ -7,15 +7,17 @@ import '../styles/admin.css';
 import '../styles/motion.css';
 
 import { icon } from '../icons.ts';
-import type { ArticleSummary, CollectionSummary } from '../shared/api.ts';
+import type { ArticleSummary, CollectionSummary, Friend } from '../shared/api.ts';
+import { friendHref, hostOf } from '../shared/friends.ts';
 import { mountThemeButton } from '../theme.ts';
 import { api, ApiFailure, onSignedOut } from './api.ts';
 import { articleView, type View } from './article-view.ts';
 import { collectionView } from './collection-view.ts';
+import { friendsView, type FriendsView } from './friends-view.ts';
 import { contextMenu, copy, MOD, type MenuEntry } from '../menu.ts';
 import { h, svg } from './dom.ts';
 
-type Kind = 'articles' | 'collections';
+type Kind = 'articles' | 'collections' | 'friends';
 
 const app = document.getElementById('app')!;
 const labels = () => ({ toDark: 'Switch to the dark theme', toLight: 'Switch to the light theme' });
@@ -59,10 +61,12 @@ function signIn(configured: boolean): void {
 
 let articles: ArticleSummary[] = [];
 let collections: CollectionSummary[] = [];
+let friends: Friend[] = [];
 let current: { kind: Kind; id: number; view: View } | null = null;
 
 const articleList = h('ul', { class: 'side-list' });
 const collectionList = h('ul', { class: 'side-list' });
+const friendList = h('ul', { class: 'side-list' });
 const work = h('section', { class: 'work' });
 const themeButton = h('button', { class: 'btn-ghost btn-icon', type: 'button' });
 
@@ -84,6 +88,13 @@ async function newArticle(): Promise<void> {
     articles = [a, ...articles];
     location.hash = `#/articles/${a.id}`;
 }
+/** Where to put the cursor once the friends list is open. */
+let friendFocus: number | 'new' | null = null;
+async function toFriend(at: number | 'new'): Promise<void> {
+    if (current?.kind === 'friends') return (current.view as FriendsView).focus(at);
+    friendFocus = at;
+    location.hash = '#/friends';
+}
 async function newCollection(): Promise<void> {
     const c = await api.createCollection();
     collections = [...collections, c];
@@ -102,6 +113,7 @@ const shell = h(
             { class: 'side-scroll' },
             group('Articles', articleList, newArticle),
             group('Collections', collectionList, newCollection),
+            group('Friends', friendList, () => toFriend('new')),
         ),
         h(
             'footer',
@@ -156,6 +168,28 @@ function paintList(): void {
         );
     articleList.replaceChildren(...articles.map(a => item('articles', a.id, a.title, a.state === 'draft')));
     collectionList.replaceChildren(...collections.map(c => item('collections', c.id, c.title, false)));
+    friendList.replaceChildren(
+        ...friends.map((f, i) => {
+            const href = friendHref(f.url);
+            return h(
+                'li',
+                null,
+                h(
+                    'a',
+                    {
+                        class: `side-item${href ? '' : ' is-draft'}`,
+                        href: '#/friends',
+                        'data-friend': i,
+                        onclick: (e: MouseEvent) => {
+                            e.preventDefault();
+                            void toFriend(i);
+                        },
+                    },
+                    f.name.trim() || (href ? hostOf(href) : f.url.trim()) || 'Untitled',
+                ),
+            );
+        }),
+    );
 }
 
 /** Saves the open piece before leaving it. False if it couldn't be saved and the writer chose to stay. */
@@ -200,6 +234,11 @@ async function removeItem(kind: Kind, id: number, title: string): Promise<void> 
 }
 
 function itemMenu(link: HTMLAnchorElement): MenuEntry[] | null {
+    if (link.dataset.friend) {
+        const i = Number(link.dataset.friend);
+        const href = friendHref(friends[i]?.url ?? '');
+        return [{ label: 'Open', run: () => toFriend(i) }, href && { label: 'Visit', run: () => void window.open(href, '_blank', 'noopener') }];
+    }
     const m = /^#\/(articles|collections)\/(\d+)$/.exec(link.getAttribute('href') ?? '');
     if (!m) return null;
     const kind = m[1] as Kind;
@@ -230,6 +269,7 @@ contextMenu(app, target => {
         return [
             { label: 'New article', run: () => newArticle() },
             { label: 'New collection', run: () => newCollection() },
+            { label: 'New friend', run: () => toFriend('new') },
             'gap',
             { label: 'Hide the list', keys: `${MOD}\\`, run: toggleList },
         ];
@@ -268,8 +308,8 @@ function swap(change: () => void, type?: 'forward' | 'back', animate = true): vo
 
 let lastHash = '';
 async function route(animate = true): Promise<void> {
-    const m = /^#\/(articles|collections)\/(\d+)$/.exec(location.hash);
-    const want = m ? { kind: m[1] as Kind, id: Number(m[2]) } : null;
+    const m = /^#\/(?:(articles|collections)\/(\d+)|(friends))$/.exec(location.hash);
+    const want = m ? (m[3] ? { kind: 'friends' as Kind, id: 0 } : { kind: m[1] as Kind, id: Number(m[2]) }) : null;
     if (current && want && current.kind === want.kind && current.id === want.id) return;
     if (!(await leave())) {
         history.replaceState(null, '', lastHash || '#');
@@ -291,7 +331,15 @@ async function route(animate = true): Promise<void> {
     const back = (): void => void (location.hash = '');
     try {
         const view =
-            want.kind === 'articles'
+            want.kind === 'friends'
+                ? friendsView(await api.friends(), {
+                      changed: list => {
+                          friends = list;
+                          paintList();
+                      },
+                      back,
+                  })
+                : want.kind === 'articles'
                 ? articleView(await api.article(want.id), {
                       changed: a => {
                           articles = [a, ...articles.filter(x => x.id !== a.id)];
@@ -324,6 +372,8 @@ async function route(animate = true): Promise<void> {
             shell.classList.add('has-item');
             work.replaceChildren(view.el);
             view.mounted?.();
+            if (friendFocus !== null && 'focus' in view) (view as FriendsView).focus(friendFocus);
+            friendFocus = null;
             paintList();
         }, wasOpen ? undefined : 'forward', animate);
     } catch (e) {
@@ -336,7 +386,7 @@ async function route(animate = true): Promise<void> {
 }
 
 async function start(): Promise<void> {
-    [articles, collections] = await Promise.all([api.articles(), api.collections()]);
+    [articles, collections, friends] = await Promise.all([api.articles(), api.collections(), api.friends()]);
     app.replaceChildren(shell);
     await route(false);
 }

@@ -1,4 +1,4 @@
-import type { Article, ArticleState, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate } from '../src/shared/api.ts';
+import type { Article, ArticleState, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend } from '../src/shared/api.ts';
 import { renderMarkdown, SLUG, slugify } from '../src/shared/markdown.ts';
 import { HttpError } from './http.ts';
 
@@ -388,3 +388,17 @@ export const liveCollection = async (db: D1Database, slug: string, now: number):
 /** The collections an article belongs to, for "part 2 of 5" and the next and previous parts. */
 export const collectionsOf = (db: D1Database, articleId: number, now: number): Promise<LiveCollection[]> =>
     liveCollections(db, now, 'c.id IN (SELECT collection_id FROM collection_articles WHERE article_id = ?)', articleId);
+
+// ── friends
+
+export async function listFriends(db: D1Database): Promise<Friend[]> {
+    const { results } = await db.prepare('SELECT name, url, note FROM friends ORDER BY position').all<Friend>();
+    return results;
+}
+
+/** Puts the whole list in place at once, in the order given. */
+export async function saveFriends(db: D1Database, friends: Friend[]): Promise<Friend[]> {
+    const insert = db.prepare('INSERT INTO friends (position, name, url, note) VALUES (?, ?, ?, ?)');
+    await db.batch([db.prepare('DELETE FROM friends'), ...friends.map((f, i) => insert.bind(i, f.name, f.url, f.note))]);
+    return listFriends(db);
+}
