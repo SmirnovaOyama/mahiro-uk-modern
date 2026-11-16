@@ -137,6 +137,12 @@ html {
 .toc a:hover {
     color: var(--text);
 }
+/* The reading marker's drawing (reading.ts) belongs to the margin. Under the
+   title it is not drawn at all; left to itself an empty <svg> still takes up
+   300 by 150 pixels. */
+.toc-rail {
+    display: none;
+}
 @media (min-width: 1240px) {
     .article {
         position: relative;
@@ -177,7 +183,6 @@ html {
         padding-inline-start: calc(var(--space-4) + 2px);
     }
     .toc-rail {
-        display: none;
         position: absolute;
         inset-block-start: 0;
         inset-inline-start: 0;
