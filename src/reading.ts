@@ -23,6 +23,10 @@ function sectionAt(target: Element, y: number): HTMLElement | null {
  * within a section it moves from that entry towards the next as the section is
  * read, so it is always as far down the list as the reader is through the
  * article, and a faint terracotta line fills the path behind it.
+ *
+ * A list longer than the screen follows as a whole: it slides through its own
+ * length as the marker travels down it, so the marker starts at the top of
+ * the part in view and ends at its bottom, and no entry has to be scrolled to.
  */
 function followContents(): () => void {
     const list = document.querySelector<HTMLElement>('.toc-list');
@@ -87,11 +91,44 @@ function followContents(): () => void {
     const show = (current: number): void =>
         links.forEach((a, i) => (i === current ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
 
-    /** Where an entry sits in the list, from the list's own top. */
+    /** Where an entry sits in the list, from the top of its whole length, however far that has slid. */
     const place = (a: HTMLAnchorElement): { top: number; height: number } => {
         const box = list.getBoundingClientRect();
         const r = a.getBoundingClientRect();
-        return { top: r.top - box.top, height: r.height };
+        return { top: r.top - box.top + list.scrollTop, height: r.height };
+    };
+
+    // The list's own slide. It eases towards where it should be rather than
+    // snapping there, so a jump to a far section carries the list along with
+    // the marker; its place is kept here as well, since a browser may round
+    // away the last fraction of a pixel.
+    let aim = 0;
+    let at = 0;
+    let sliding = 0;
+    const slide = (): void => {
+        at += (aim - at) * 0.2;
+        if (Math.abs(aim - at) < 0.5) at = aim;
+        list.scrollTop = at;
+        sliding = at === aim ? 0 : requestAnimationFrame(slide);
+    };
+    const slideTo = (top: number): void => {
+        aim = top;
+        if (still.matches || !list.classList.contains('is-settled')) {
+            cancelAnimationFrame(sliding);
+            sliding = 0;
+            list.scrollTop = at = aim;
+        } else if (!sliding && Math.abs(aim - list.scrollTop) >= 0.5) {
+            // Start from where it is: the reader may have scrolled the list to look ahead.
+            at = list.scrollTop;
+            sliding = requestAnimationFrame(slide);
+        }
+    };
+    /** Entries cut off at an edge fade out there, by as much as lies beyond it, up to a line's worth. */
+    const edges = (): void => {
+        const above = list.scrollTop;
+        const below = list.scrollHeight - list.clientHeight - above;
+        list.style.setProperty('--cut-above', `${Math.max(0, Math.min(32, above)).toFixed(1)}px`);
+        list.style.setProperty('--cut-below', `${Math.max(0, Math.min(32, below)).toFixed(1)}px`);
     };
 
     const mark = (): void => {
@@ -146,13 +183,15 @@ function followContents(): () => void {
             return total;
         };
         const d = `M${points.map(([x, y]) => `${x} ${y}`).join(' L')}`;
-        const listBox = list.getBoundingClientRect();
+        const first = spots[0]!;
+        const last = spots.at(-1)!;
+        const depth = Math.ceil(last.top + last.height);
         rail.setAttribute('width', String(STEP + 2));
-        rail.setAttribute('height', String(Math.ceil(listBox.height)));
+        rail.setAttribute('height', String(depth));
         filter.setAttribute('x', '-20');
         filter.setAttribute('y', '-60');
         filter.setAttribute('width', String(STEP + 42));
-        filter.setAttribute('height', String(Math.ceil(listBox.height) + 120));
+        filter.setAttribute('height', String(depth + 120));
         for (const path of [track, fill, marker]) path.setAttribute('d', d);
 
         const here = spots[current]!;
@@ -165,6 +204,12 @@ function followContents(): () => void {
         marker.style.strokeDasharray = `${reach} ${total + 1}`;
         marker.style.strokeDashoffset = `${-start}`;
         fill.style.strokeDasharray = `${start + reach / 2} ${total + 1}`;
+
+        // The list has slid as far through its length as the marker is down it.
+        const room = list.scrollHeight - list.clientHeight;
+        const down = Math.min(1, Math.max(0, (y - first.top) / Math.max(1, last.top - first.top)));
+        slideTo(room > 0 ? Math.round(down * room) : 0);
+        edges();
     };
     const onScroll = (): void => {
         // The jump a click starts, smooth or not, is over within a second; after that, scrolling is the reader's.
@@ -186,11 +231,14 @@ function followContents(): () => void {
     requestAnimationFrame(() => list.classList.add('is-settled'));
     addEventListener('scroll', onScroll, { passive: true });
     addEventListener('resize', onScroll);
+    list.addEventListener('scroll', edges, { passive: true });
     return () => {
         links.forEach(a => a.removeEventListener('click', onClick));
         removeEventListener('scroll', onScroll);
         removeEventListener('resize', onScroll);
+        list.removeEventListener('scroll', edges);
         cancelAnimationFrame(fading);
+        cancelAnimationFrame(sliding);
         rail.remove();
     };
 }
