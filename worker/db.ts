@@ -1,5 +1,5 @@
 import type { Article, ArticleState, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend } from '../src/shared/api.ts';
-import { renderMarkdown, SLUG, slugify } from '../src/shared/markdown.ts';
+import { renderMarkdown, SLUG, SLUG_MAX, slugify } from '../src/shared/markdown.ts';
 import { HttpError } from './http.ts';
 
 interface ArticleRow {
@@ -60,7 +60,7 @@ const toSummary = (row: SummaryRow, now: number): ArticleSummary => ({
 
 function checkSlug(slug: string): string {
     if (!SLUG.test(slug)) throw new HttpError(400, 'An address may only hold letters, numbers and single dashes.', 'slug');
-    if (slug.length > 80) throw new HttpError(400, 'That address is too long.', 'slug');
+    if (slug.length > SLUG_MAX) throw new HttpError(400, 'That address is too long.', 'slug');
     return slug;
 }
 

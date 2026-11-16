@@ -17,7 +17,7 @@ import markedKatex from 'marked-katex-extension';
 import { markedSmartypants } from 'marked-smartypants';
 import { slugify } from './slug.ts';
 
-export { slugify, SLUG } from './slug.ts';
+export { slugify, SLUG, SLUG_MAX } from './slug.ts';
 
 export const escapeHtml = (s: string): string =>
     s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);

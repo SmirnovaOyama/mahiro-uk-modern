@@ -10,7 +10,7 @@
 //   /api/...                                                          the editor's API
 import type { ArticleUpdate, CollectionUpdate, Friend } from '../src/shared/api.ts';
 import { avatarSrc } from '../src/shared/friends.ts';
-import { renderMarkdown } from '../src/shared/markdown.ts';
+import { renderMarkdown, SLUG_MAX } from '../src/shared/markdown.ts';
 import { checkPassword, clearCookie, isSignedIn, sameOrigin, sessionCookie } from './auth.ts';
 import * as db from './db.ts';
 import type { Env } from './env.ts';
@@ -85,7 +85,7 @@ async function api(request: Request, env: Env, url: URL): Promise<Response> {
             const b = await readJson<Record<string, unknown>>(request);
             const update: ArticleUpdate = {
                 title: str(b.title, 'title', 300),
-                slug: str(b.slug, 'slug', 80),
+                slug: str(b.slug, 'slug', SLUG_MAX),
                 summary: str(b.summary, 'summary', 1000),
                 body: str(b.body, 'body', 500_000),
                 publishedAt: optionalTime(b.publishedAt, 'publishedAt'),
@@ -131,7 +131,7 @@ async function api(request: Request, env: Env, url: URL): Promise<Response> {
             const b = await readJson<Record<string, unknown>>(request);
             const update: CollectionUpdate = {
                 title: str(b.title, 'title', 300),
-                slug: str(b.slug, 'slug', 80),
+                slug: str(b.slug, 'slug', SLUG_MAX),
                 description: str(b.description, 'description', 2000),
                 articleIds: ids(b.articleIds, 'articleIds'),
                 updatedAt: optionalTime(b.updatedAt, 'updatedAt') ?? 0,

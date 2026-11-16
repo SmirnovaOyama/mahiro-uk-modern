@@ -27,6 +27,7 @@
     "marked": "^18.2.0",
     "marked-footnote": "^1.4.0",
     "marked-katex-extension": "^5.1.13",
-    "marked-smartypants": "^1.1.12"
+    "marked-smartypants": "^1.1.12",
+    "pinyin-pro": "^3.29.5"
   }
 }
