@@ -217,21 +217,12 @@ html {
         stroke-width: 1;
     }
     .toc-fill {
-        stroke: var(--accent-ink);
-        stroke-opacity: 0.32;
+        stroke: color-mix(in oklch, var(--accent-ink) 32%, var(--bg));
         stroke-width: 1;
     }
     .toc-marker {
         stroke: var(--accent-ink);
         stroke-width: 2;
-    }
-    .toc-list.is-settled .toc-marker {
-        transition:
-            stroke-dasharray var(--duration-slow) var(--ease-out),
-            stroke-dashoffset var(--duration-slow) var(--ease-out);
-    }
-    .toc-list.is-settled .toc-fill {
-        transition: stroke-dasharray var(--duration-slow) var(--ease-out);
     }
     .toc-list.is-following a {
         transition:
