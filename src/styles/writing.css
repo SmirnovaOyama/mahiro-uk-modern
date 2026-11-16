@@ -202,22 +202,10 @@ html {
     .toc-list.is-settled .toc-fill {
         transition: stroke-dasharray var(--duration-slow) var(--ease-out);
     }
-    /* Depth of field: entries further from the reading head soften and fade,
-       and come back into focus as the marker nears them. Pointing at the list,
-       or moving into it with the keyboard, brings every entry into focus. */
     .toc-list.is-following a {
-        --away: 0;
-        filter: blur(max(0px, (min(var(--away), 4) - 0.6) * 0.45px));
-        opacity: calc(1 - min(var(--away), 4) * 0.12);
         transition:
             color var(--duration-base) var(--ease-standard),
-            transform var(--duration-base) var(--ease-out),
-            filter var(--duration-slow) var(--ease-out),
-            opacity var(--duration-slow) var(--ease-out);
-    }
-    .toc-list.is-following:is(:hover, :focus-within) a {
-        filter: none;
-        opacity: 1;
+            transform var(--duration-base) var(--ease-out);
     }
     /* The entry being read leans a hair towards the marker. */
     .toc-list.is-following a[aria-current='true'] {

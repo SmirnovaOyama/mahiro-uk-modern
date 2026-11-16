@@ -42,6 +42,41 @@ function followContents(): () => void {
         return path;
     }) as [SVGPathElement, SVGPathElement, SVGPathElement];
     list.append(rail);
+
+    // Motion blur: while the marker travels it smears along the line, by as much
+    // as it moved, and comes back into focus as it settles. A blur only up and
+    // down (the line runs that way), drawn over the whole rail's area so a thin
+    // vertical stroke is never clipped away.
+    const filter = document.createElementNS(NS, 'filter');
+    filter.setAttribute('id', 'toc-motion');
+    filter.setAttribute('filterUnits', 'userSpaceOnUse');
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+    const smear = document.createElementNS(NS, 'feGaussianBlur');
+    smear.setAttribute('stdDeviation', '0 0');
+    filter.append(smear);
+    const defs = document.createElementNS(NS, 'defs');
+    defs.append(filter);
+    rail.prepend(defs);
+    marker.setAttribute('filter', 'url(#toc-motion)');
+    const still = matchMedia('(prefers-reduced-motion: reduce)');
+    let blur = 0;
+    let lastStart: number | null = null;
+    let fading = 0;
+    const fade = (): void => {
+        blur *= 0.8;
+        if (blur < 0.05) blur = 0;
+        smear.setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        fading = blur ? requestAnimationFrame(fade) : 0;
+    };
+    const moved = (start: number): void => {
+        const delta = lastStart === null ? 0 : Math.abs(start - lastStart);
+        lastStart = start;
+        if (still.matches || delta < 0.5) return;
+        blur = Math.min(7, blur + delta * 0.22);
+        smear.setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        if (!fading) fading = requestAnimationFrame(fade);
+    };
+
     /** How far in, in pixels, the line steps beside an indented entry. */
     const STEP = 16;
 
@@ -114,6 +149,10 @@ function followContents(): () => void {
         const listBox = list.getBoundingClientRect();
         rail.setAttribute('width', String(STEP + 2));
         rail.setAttribute('height', String(Math.ceil(listBox.height)));
+        filter.setAttribute('x', '-20');
+        filter.setAttribute('y', '-60');
+        filter.setAttribute('width', String(STEP + 42));
+        filter.setAttribute('height', String(Math.ceil(listBox.height) + 120));
         for (const path of [track, fill, marker]) path.setAttribute('d', d);
 
         const here = spots[current]!;
@@ -122,10 +161,7 @@ function followContents(): () => void {
         const start = along(y);
         const reach = Math.min(total, along(y + here.height)) - start;
         // The marker: just its own stretch of the path. The fill: everything up to its middle.
-        // Depth of field: each entry's distance from the reading head, in entries,
-        // which the stylesheet turns into a soft blur and fade.
-        const head = current + through;
-        links.forEach((a, i) => a.style.setProperty('--away', Math.abs(i - head).toFixed(3)));
+        moved(start);
         marker.style.strokeDasharray = `${reach} ${total + 1}`;
         marker.style.strokeDashoffset = `${-start}`;
         fill.style.strokeDasharray = `${start + reach / 2} ${total + 1}`;
@@ -154,6 +190,7 @@ function followContents(): () => void {
         links.forEach(a => a.removeEventListener('click', onClick));
         removeEventListener('scroll', onScroll);
         removeEventListener('resize', onScroll);
+        cancelAnimationFrame(fading);
         rail.remove();
     };
 }
