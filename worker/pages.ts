@@ -5,7 +5,7 @@ import { icon } from '../src/icons.ts';
 import katex from 'katex';
 import { escapeHtml as esc, hasMath, renderMarkdown } from '../src/shared/markdown.ts';
 import type { Friend } from '../src/shared/api.ts';
-import { friendHref, hostOf } from '../src/shared/friends.ts';
+import { avatarSrc, friendHref, hostOf } from '../src/shared/friends.ts';
 
 const KATEX_VERSION = katex.version;
 import type { LiveArticle, LiveCollection, LiveListing } from './db.ts';
@@ -24,6 +24,8 @@ export interface Page {
     /** For an article: when it first went out and when it last changed. */
     published?: number;
     modified?: number;
+    /** Its own link preview picture, instead of the site's; made absolute against the request. */
+    image?: string;
     /** Holds LaTeX, so it needs the math styles. */
     math?: boolean;
     /** The parts either side in its collection, so the page knows which way it was turned. */
@@ -86,6 +88,27 @@ function seriesBar(c: LiveCollection, articleId: number): string {
 </nav>`;
 }
 
+/**
+ * The article's own sections, from the ids its headings were given when the
+ * Markdown was turned into HTML. Only second- and third-level headings count,
+ * and only when there are at least two, so a short piece carries no list.
+ */
+function contents(html: string): string {
+    const entries = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<a class="anchor"/g)].map(([, level, id, inner]) => ({
+        level,
+        id: id!,
+        // The heading's words as already escaped HTML, without its inline tags.
+        text: inner!.replace(/<[^>]+>/g, '').trim(),
+    }));
+    if (entries.length < 2) return '';
+    return `<nav class="toc" aria-label="Contents">
+        <div class="toc-list">
+            <p class="toc-label">Contents</p>
+            <ol>${entries.map(e => `<li class="toc-h${e.level}"><a href="#${e.id}">${e.text}</a></li>`).join('')}</ol>
+        </div>
+    </nav>`;
+}
+
 export function articlePage(article: LiveArticle, collections: LiveCollection[], preview = false): Page {
     // An article in more than one collection is shown in the first; the others still list it.
     const bar = collections.map(c => seriesBar(c, article.id)).find(Boolean) ?? '';
@@ -113,6 +136,7 @@ export function articlePage(article: LiveArticle, collections: LiveCollection[],
         ${article.summary ? `<p class="page-summary">${esc(article.summary)}</p>` : ''}
         <p class="page-meta">${time(article.publishedAt)}</p>
     </header>
+    ${contents(article.html)}
     <div class="prose">${article.html}</div>
 </article>
 ${bar}`,
@@ -133,10 +157,20 @@ ${titles(c.articles.map(a => ({ href: articleHref(a), title: a.title })), true)}
 }
 
 /** The people the blog points to, or null while there's nobody to show. */
+/**
+ * A friend's picture after their name, round like mine on the home page; with
+ * none set, a soft circle holding the first letter of their name.
+ */
+function friendFace(f: { name: string; avatar: string | null }): string {
+    if (f.avatar) return `<img class="friend-avatar" src="${esc(f.avatar)}" alt="" width="96" height="96" loading="lazy" decoding="async">`;
+    const initial = [...f.name.trim()][0]?.toLocaleUpperCase() ?? '';
+    return `<span class="friend-avatar friend-initial" aria-hidden="true">${esc(initial)}</span>`;
+}
+
 export function friendsPage(friends: Friend[]): Page | null {
     const shown = friends.flatMap(f => {
         const href = friendHref(f.url);
-        return href ? [{ href, name: f.name.trim() || hostOf(href), note: f.note.trim() || hostOf(href) }] : [];
+        return href ? [{ href, name: f.name.trim() || hostOf(href), note: f.note.trim() || hostOf(href), avatar: avatarSrc(f.avatar ?? '') }] : [];
     });
     if (!shown.length) return null;
     return {
@@ -145,7 +179,7 @@ export function friendsPage(friends: Friend[]): Page | null {
         path: '/friends',
         main: `<header class="page-head"><h1 class="page-title">Friends</h1></header>
 <ul class="titles friends">${shown
-            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${esc(f.name)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
+            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${esc(f.name)}${friendFace(f)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
             .join('')}</ul>`,
     };
 }
@@ -193,6 +227,9 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
         })
         .on('meta[property="og:title"], meta[name="twitter:title"]', { element: e => void e.setAttribute('content', page.title) })
         .on('meta[property="og:url"]', { element: e => void e.setAttribute('content', canonical) })
+        .on('meta[property="og:image"], meta[name="twitter:image"]', {
+            element: e => void (page.image && e.setAttribute('content', new URL(page.image, url).href)),
+        })
         .on('meta[property="og:type"]', { element: e => void e.setAttribute('content', page.type ?? 'website') })
         .on('link[rel="canonical"]', { element: e => void e.setAttribute('href', canonical) })
         .on('meta[name="robots"]', { element: e => void (page.hidden ? e.setAttribute('content', 'noindex') : e.remove()) })

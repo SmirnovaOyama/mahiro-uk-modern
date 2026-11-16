@@ -9,8 +9,23 @@
     display: flex;
     align-items: center;
     gap: var(--space-1);
+    white-space: nowrap;
+}
+/* The smallest phones: the header keeps to one line by drawing its pieces closer. */
+@media (max-width: 360px) {
+    .reading-top {
+        gap: var(--space-2);
+    }
+    .reading-nav {
+        gap: 0;
+    }
+    .reading-nav .btn-ghost:not(.btn-icon) {
+        padding-inline: var(--space-2);
+    }
 }
 .home {
+    flex: none;
+    white-space: nowrap;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
@@ -33,8 +48,15 @@
     box-shadow: 0 0 0 1px var(--border);
 }
 
+/* The frozen header is 4.5rem tall. The home page lets its one sentence float
+   lower; a page to read starts a short step below the header instead. */
 main.reading-main {
-    padding-block: calc(4.5rem + clamp(var(--space-8), 11svh, var(--space-16))) var(--space-32);
+    padding-block: calc(4.5rem + var(--space-8)) var(--space-32);
+}
+
+/* A section jumped to lands below the frozen header, not under it. */
+html {
+    scroll-padding-top: calc(4.5rem + var(--space-6));
 }
 
 .page-head {
@@ -64,6 +86,139 @@ main.reading-main {
     font-size: 0.8125rem;
     line-height: 1.25rem;
 }
+/* ── contents: the article's sections ─────────────────────────────────────
+   Under the title on narrower screens; in the margin beside the text, staying
+   in view and marking the section being read, where there is room. */
+.toc {
+    margin-block: calc(-1 * var(--space-4)) var(--space-12);
+}
+.toc-label {
+    margin-block-end: var(--space-2);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+}
+.toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Under the title: text large enough to read and hit, in rows close enough
+   to read as one list (36px apart, each row its own tap area). */
+.toc li {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+.toc a {
+    padding-block: 0.375rem;
+}
+.toc .toc-h3 {
+    padding-inline-start: var(--space-4);
+}
+.toc a {
+    display: block;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: var(--radius-xs);
+    transition: color var(--duration-quick) var(--ease-standard);
+}
+.toc a:hover {
+    color: var(--text);
+}
+@media (min-width: 1240px) {
+    .article {
+        position: relative;
+    }
+    /* The full height of the article, so the list inside can stay in view all the way down. */
+    .toc {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: calc(100% + var(--space-12));
+        width: 12rem;
+        margin: 0;
+    }
+    /* In the margin, read with a pointer, the list is set small and close. */
+    .toc li {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+    .toc li + li {
+        margin-block-start: var(--space-1_5);
+    }
+    .toc a {
+        display: inline-block;
+        padding-block: 0;
+    }
+    /* Only in the margin, where the list stays in view, is the section being read marked. */
+    .toc a[aria-current='true'] {
+        color: var(--text);
+        font-weight: 500;
+    }
+    /* The reading marker (reading.ts): a hairline down the list's left edge
+       that steps in beside indented entries, a fainter terracotta fill along
+       it up to where the reader is, and a short terracotta stretch that glides
+       along the same path, never jumping. */
+    .toc-list.is-following ol {
+        padding-inline-start: calc(var(--space-4) + 2px);
+    }
+    .toc-list.is-following .toc-label {
+        padding-inline-start: calc(var(--space-4) + 2px);
+    }
+    .toc-rail {
+        display: none;
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        overflow: visible;
+        pointer-events: none;
+    }
+    .toc-list.is-following .toc-rail {
+        display: block;
+    }
+    .toc-rail path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .toc-track {
+        stroke: var(--border);
+        stroke-width: 1;
+    }
+    .toc-fill {
+        stroke: var(--accent-ink);
+        stroke-opacity: 0.32;
+        stroke-width: 1;
+    }
+    .toc-marker {
+        stroke: var(--accent-ink);
+        stroke-width: 2;
+    }
+    .toc-list.is-settled .toc-marker {
+        transition:
+            stroke-dasharray var(--duration-slow) var(--ease-out),
+            stroke-dashoffset var(--duration-slow) var(--ease-out);
+    }
+    .toc-list.is-settled .toc-fill {
+        transition: stroke-dasharray var(--duration-slow) var(--ease-out);
+    }
+    .toc-list.is-following a {
+        transition:
+            color var(--duration-base) var(--ease-standard),
+            transform var(--duration-base) var(--ease-out);
+    }
+    /* The entry being read leans a hair towards the marker. */
+    .toc-list.is-following a[aria-current='true'] {
+        transform: translateX(2px);
+    }
+    .toc-list {
+        position: sticky;
+        top: calc(4.5rem + var(--space-6));
+        max-height: calc(100svh - 4.5rem - var(--space-16));
+        overflow-y: auto;
+    }
+}
+
 .section-heading {
     margin-block: var(--space-16) var(--space-4);
     color: var(--text-muted);
@@ -116,6 +271,32 @@ main.reading-main {
 .titles.friends li + li {
     margin-block-start: var(--space-5);
 }
+/* Their picture, after their name, a little taller than a capital, as mine is on the home page. */
+.friend-avatar {
+    display: inline-block;
+    flex: none;
+    width: 1.2em;
+    height: 1.2em;
+    margin-inline-start: 0.28em;
+    border-radius: var(--radius-full);
+    vertical-align: -0.24em;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+}
+/* No picture yet: the first letter of their name in a quiet terracotta circle. */
+.friend-initial {
+    display: inline-grid;
+    place-items: center;
+    background: var(--illustration-wash);
+    color: var(--accent-ink);
+    font-size: 0.55em;
+    width: calc(1.2em / 0.55);
+    height: calc(1.2em / 0.55);
+    line-height: 1;
+    font-weight: 500;
+    vertical-align: 0.05em;
+    text-decoration: none;
+}
 .friend-note {
     color: var(--text-muted);
     font-family: var(--font-sans);
@@ -160,6 +341,12 @@ main.reading-main {
 }
 :lang(zh) .prose {
     line-height: 1.9;
+}
+/* Running text keeps to about seventy characters a line, so the eye finds the
+   next line easily and the words stop short of the margin. Pictures, code,
+   tables and the title still use the column's whole width. */
+.prose > :is(p, ul, ol, blockquote, dl, h2, h3, h4, h5, h6, hr):not(:has(img, video)) {
+    max-width: 36rem;
 }
 .prose > :first-child {
     margin-block-start: 0;
@@ -361,4 +548,11 @@ main.reading-main {
 .prose .katex-error {
     font-family: var(--font-mono);
     font-size: 0.86em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toc-rail path,
+    .toc-list a {
+        transition: none !important;
+    }
 }

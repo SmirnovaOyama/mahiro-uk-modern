@@ -443,6 +443,62 @@ button:disabled {
     margin-block-start: 0.125rem;
 }
 
+/* Their picture, at the start of the row: a circle to click, or to drop a
+   picture on. As tall as the name's line, so it sits centred beside the name,
+   with the same breathing room the page gives an avatar before a name. */
+.friend-face {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    margin-inline-end: var(--space-3);
+    padding: 0;
+    overflow: hidden;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-full);
+    background: var(--illustration-wash);
+    color: var(--accent-ink);
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        border-color var(--duration-quick) var(--ease-standard),
+        opacity var(--duration-quick) var(--ease-standard);
+}
+.friend-face.has-picture {
+    border: 1px solid var(--border);
+}
+.friend-face:hover {
+    border-color: var(--accent-ink);
+}
+.friend-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+/* Uploading: the circle dims and breathes until the picture arrives. */
+.friend-face.is-busy {
+    opacity: 0.5;
+    animation: face-busy 1.2s var(--ease-standard) infinite alternate;
+}
+@keyframes face-busy {
+    to {
+        opacity: 0.25;
+    }
+}
+/* A picture dragged over the row: the circle is ready to take it. */
+.friend.is-dropping .friend-face {
+    border-style: solid;
+    border-color: var(--accent-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+    .friend-face.is-busy {
+        animation: none;
+    }
+}
+
 /* ── narrow screens: the list, or the piece, never both ───────────────── */
 
 @media (max-width: 860px) {

@@ -48,6 +48,7 @@ export const api = {
     publish: (id: number) => call<Article>('POST', `/api/articles/${id}/publish`),
     revert: (id: number) => call<Article>('POST', `/api/articles/${id}/revert`),
     unpublish: (id: number) => call<Article>('POST', `/api/articles/${id}/unpublish`),
+    setCard: (id: number, card: string) => call<{ card: string }>('PUT', `/api/articles/${id}/card`, { card }),
     setArticleCollections: (id: number, collectionIds: number[]) => call<Article>('PUT', `/api/articles/${id}/collections`, { collectionIds }),
 
     upload: (file: Blob) => call<{ url: string }>('POST', '/api/media', file),

@@ -3,6 +3,7 @@
 import { icon } from '../icons.ts';
 import type { Article, ArticleSummary } from '../shared/api.ts';
 import { slugify } from '../shared/slug.ts';
+import { drawCard } from './card.ts';
 import { api, ApiFailure } from './api.ts';
 import { autosave, describe, type SaveState } from './autosave.ts';
 import { h, svg } from './dom.ts';
@@ -82,6 +83,19 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
         ctx.changed(article);
     }, say);
 
+    /**
+     * Draws the live version's link preview and stores it. Quietly: a preview
+     * that can't be made leaves the site's own picture in its place.
+     */
+    async function makeCard(): Promise<void> {
+        try {
+            const { url } = await api.upload(await drawCard({ title: article.title, summary: article.summary }));
+            article = { ...article, card: (await api.setCard(article.id, url)).card };
+        } catch (e) {
+            console.warn('The link preview couldn’t be made.', e);
+        }
+    }
+
     async function publish(): Promise<void> {
         publishButton.disabled = true;
         try {
@@ -89,6 +103,8 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
             article = await api.publish(article.id);
             ctx.changed(article);
             note.textContent = '';
+            // Published as it is now, so the preview shows what readers will see.
+            void makeCard();
         } catch (e) {
             if (e instanceof ApiFailure) say({ kind: 'error', message: e.message, field: e.field, stale: false });
         }
@@ -315,6 +331,8 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
         mounted() {
             onResize();
             if (!article.title) title.focus();
+            // Published before previews were drawn: make its picture now, once.
+            if (article.state !== 'draft' && !article.card) void makeCard();
         },
         menu: target => {
             if (target === body) return textMenu();

@@ -6,6 +6,8 @@
     --ease-standard: cubic-bezier(0.2, 0, 0, 1);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --duration-quick: 150ms;
+    --duration-base: 220ms;
+    --duration-slow: 320ms;
 }
 
 *,
@@ -16,6 +18,9 @@
 
 html {
     -webkit-text-size-adjust: 100%;
+    /* Taps answer at once: a quick second tap is a second tap, not a zoom.
+       Pinching to zoom still works, for anyone who needs the text larger. */
+    touch-action: manipulation;
 }
 
 body {
@@ -49,6 +54,12 @@ a {
 button {
     font: inherit;
     color: inherit;
+}
+
+/* Headings the site focuses after moving to a page (router.ts) are for screen
+   readers; a ring around them only looks like a box drawn on the page. */
+[tabindex='-1']:focus {
+    outline: none;
 }
 
 :focus-visible {
