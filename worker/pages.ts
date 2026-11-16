@@ -24,6 +24,8 @@ export interface Page {
     /** For an article: when it first went out and when it last changed. */
     published?: number;
     modified?: number;
+    /** Its own link preview picture, instead of the site's; made absolute against the request. */
+    image?: string;
     /** Holds LaTeX, so it needs the math styles. */
     math?: boolean;
     /** The parts either side in its collection, so the page knows which way it was turned. */
@@ -225,6 +227,9 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
         })
         .on('meta[property="og:title"], meta[name="twitter:title"]', { element: e => void e.setAttribute('content', page.title) })
         .on('meta[property="og:url"]', { element: e => void e.setAttribute('content', canonical) })
+        .on('meta[property="og:image"], meta[name="twitter:image"]', {
+            element: e => void (page.image && e.setAttribute('content', new URL(page.image, url).href)),
+        })
         .on('meta[property="og:type"]', { element: e => void e.setAttribute('content', page.type ?? 'website') })
         .on('link[rel="canonical"]', { element: e => void e.setAttribute('href', canonical) })
         .on('meta[name="robots"]', { element: e => void (page.hidden ? e.setAttribute('content', 'noindex') : e.remove()) })

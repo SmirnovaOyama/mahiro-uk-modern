@@ -18,6 +18,8 @@ interface ArticleRow {
     republished_at: number | null;
     created_at: number;
     updated_at: number;
+    /** Missing until migration 0004 reaches the database. */
+    published_card?: string;
 }
 
 interface CollectionRow {
@@ -91,6 +93,8 @@ export async function getArticle(db: D1Database, id: number, now: number): Promi
         ...toSummary(article, now),
         summary: article.summary,
         body: article.body,
+        // A card is only for the live version; a draft's title may have moved on.
+        card: article.status === 'published' ? (article.published_card ?? '') : '',
         republishedAt: article.republished_at,
         createdAt: article.created_at,
         collectionIds: (memberships!.results as { collection_id: number }[]).map(r => r.collection_id),
@@ -334,6 +338,24 @@ export async function liveArticlesWithBodies(db: D1Database, now: number, limit:
         .bind(now, limit)
         .all<LiveArticle>();
     return results;
+}
+
+/** Records the link preview picture the editor drew for an article's live version. */
+export async function setArticleCard(db: D1Database, id: number, card: string): Promise<void> {
+    const done = await db.prepare("UPDATE articles SET published_card = ? WHERE id = ? AND status = 'published'").bind(card, id).run();
+    if (!done.meta.changes) throw new HttpError(404, 'There is no published article to make a preview for.');
+}
+
+/**
+ * The live article's link preview picture, if it has one. Kept apart from the
+ * other queries so a database without migration 0004 still serves every page.
+ */
+export async function articleCard(db: D1Database, id: number): Promise<string> {
+    try {
+        return (await db.prepare('SELECT published_card AS card FROM articles WHERE id = ?').bind(id).first<{ card: string }>())?.card ?? '';
+    } catch {
+        return '';
+    }
 }
 
 /** The article at this address, or where it moved to, or nothing. */

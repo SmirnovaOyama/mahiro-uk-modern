@@ -101,6 +101,14 @@ async function api(request: Request, env: Env, url: URL): Promise<Response> {
     if ((p = route(path, '/api/articles/:id/publish')) && method === 'POST') return json(await db.publishArticle(env.DB, idOf(p.id), now));
     if ((p = route(path, '/api/articles/:id/revert')) && method === 'POST') return json(await db.revertArticle(env.DB, idOf(p.id), now));
     if ((p = route(path, '/api/articles/:id/unpublish')) && method === 'POST') return json(await db.unpublishArticle(env.DB, idOf(p.id), now));
+    // The link preview the editor drew for the live version: a picture it has just uploaded here.
+    if ((p = route(path, '/api/articles/:id/card')) && method === 'PUT') {
+        const { card } = await readJson<{ card?: unknown }>(request);
+        const src = avatarSrc(str(card, 'card', 300));
+        if (!src) throw new HttpError(400, 'A preview must be a picture uploaded to this site.', 'card');
+        await db.setArticleCard(env.DB, idOf(p.id), src);
+        return json({ card: src });
+    }
     if ((p = route(path, '/api/articles/:id/collections')) && method === 'PUT') {
         const { collectionIds } = await readJson<{ collectionIds?: unknown }>(request);
         return json(await db.setArticleCollections(env.DB, idOf(p.id), ids(collectionIds, 'collectionIds'), now));
@@ -176,7 +184,8 @@ async function reader(request: Request, env: Env, url: URL): Promise<Response> {
         const found = await db.liveArticle(env.DB, p.slug!, now);
         if (!found) return respond(env, request, notFound());
         if ('moved' in found) return Response.redirect(new URL(`/writing/${encodeURIComponent(found.moved)}`, url).href, 301);
-        return respond(env, request, articlePage(found.article, await db.collectionsOf(env.DB, found.article.id, now)));
+        const [collections, card] = await Promise.all([db.collectionsOf(env.DB, found.article.id, now), db.articleCard(env.DB, found.article.id)]);
+        return respond(env, request, { ...articlePage(found.article, collections), image: card || undefined });
     }
     if ((p = route(path, '/collections/:slug'))) {
         const c = await db.liveCollection(env.DB, p.slug!, now);

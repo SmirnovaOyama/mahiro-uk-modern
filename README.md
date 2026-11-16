@@ -106,7 +106,9 @@ Colours, spacing, radii and shadows come from the design system of [Oyama’s HR
 
 ## Link preview
 
-When a link to the site is shared, it shows `public/og.png`: the folded sentence as a visitor first sees it, with the address and a sleeping cat. The picture is drawn as a page, [`og.html`](og.html), and photographed with headless Chrome:
+Each article gets a preview picture of its own: its title beside my avatar, its summary, the blog's address and the sleeping cat, drawn by the editor ([`src/admin/card.ts`](src/admin/card.ts)) every time the article is published, uploaded to R2, and named in the article page's `og:image`. An article published before cards existed gets one the next time it is opened in the editor. Drawing happens in the browser, so Chinese and Japanese titles use the same system fonts as the site and the Worker needs no image library. Migration `0004` adds the column that remembers it.
+
+Every other page, including the home page, shows `public/og.png`: the folded sentence as a visitor first sees it, with the address and a sleeping cat. The picture is drawn as a page, [`og.html`](og.html), and photographed with headless Chrome:
 
 ```bash
 npm run dev    # in one terminal

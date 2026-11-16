@@ -18,6 +18,8 @@ export interface ArticleSummary {
 export interface Article extends ArticleSummary {
     summary: string;
     body: string;
+    /** The live version's link preview picture, or empty when it has none yet. */
+    card: string;
     republishedAt: number | null;
     createdAt: number;
     collectionIds: number[];

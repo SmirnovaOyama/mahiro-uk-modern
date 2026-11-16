@@ -286,6 +286,12 @@ html {
 :lang(zh) .prose {
     line-height: 1.9;
 }
+/* Running text keeps to about seventy characters a line, so the eye finds the
+   next line easily and the words stop short of the margin. Pictures, code,
+   tables and the title still use the column's whole width. */
+.prose > :is(p, ul, ol, blockquote, dl, h2, h3, h4, h5, h6, hr):not(:has(img, video)) {
+    max-width: 36rem;
+}
 .prose > :first-child {
     margin-block-start: 0;
 }
