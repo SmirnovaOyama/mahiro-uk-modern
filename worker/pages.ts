@@ -86,6 +86,27 @@ function seriesBar(c: LiveCollection, articleId: number): string {
 </nav>`;
 }
 
+/**
+ * The article's own sections, from the ids its headings were given when the
+ * Markdown was turned into HTML. Only second- and third-level headings count,
+ * and only when there are at least two, so a short piece carries no list.
+ */
+function contents(html: string): string {
+    const entries = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<a class="anchor"/g)].map(([, level, id, inner]) => ({
+        level,
+        id: id!,
+        // The heading's words as already escaped HTML, without its inline tags.
+        text: inner!.replace(/<[^>]+>/g, '').trim(),
+    }));
+    if (entries.length < 2) return '';
+    return `<nav class="toc" aria-label="Contents">
+        <div class="toc-list">
+            <p class="toc-label">Contents</p>
+            <ol>${entries.map(e => `<li class="toc-h${e.level}"><a href="#${e.id}">${e.text}</a></li>`).join('')}</ol>
+        </div>
+    </nav>`;
+}
+
 export function articlePage(article: LiveArticle, collections: LiveCollection[], preview = false): Page {
     // An article in more than one collection is shown in the first; the others still list it.
     const bar = collections.map(c => seriesBar(c, article.id)).find(Boolean) ?? '';
@@ -113,6 +134,7 @@ export function articlePage(article: LiveArticle, collections: LiveCollection[],
         ${article.summary ? `<p class="page-summary">${esc(article.summary)}</p>` : ''}
         <p class="page-meta">${time(article.publishedAt)}</p>
     </header>
+    ${contents(article.html)}
     <div class="prose">${article.html}</div>
 </article>
 ${bar}`,

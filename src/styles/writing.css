@@ -9,8 +9,23 @@
     display: flex;
     align-items: center;
     gap: var(--space-1);
+    white-space: nowrap;
+}
+/* The smallest phones: the header keeps to one line by drawing its pieces closer. */
+@media (max-width: 360px) {
+    .reading-top {
+        gap: var(--space-2);
+    }
+    .reading-nav {
+        gap: 0;
+    }
+    .reading-nav .btn-ghost:not(.btn-icon) {
+        padding-inline: var(--space-2);
+    }
 }
 .home {
+    flex: none;
+    white-space: nowrap;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
@@ -33,8 +48,15 @@
     box-shadow: 0 0 0 1px var(--border);
 }
 
+/* The frozen header is 4.5rem tall. The home page lets its one sentence float
+   lower; a page to read starts a short step below the header instead. */
 main.reading-main {
-    padding-block: calc(4.5rem + clamp(var(--space-8), 11svh, var(--space-16))) var(--space-32);
+    padding-block: calc(4.5rem + var(--space-8)) var(--space-32);
+}
+
+/* A section jumped to lands below the frozen header, not under it. */
+html {
+    scroll-padding-top: calc(4.5rem + var(--space-6));
 }
 
 .page-head {
@@ -64,6 +86,82 @@ main.reading-main {
     font-size: 0.8125rem;
     line-height: 1.25rem;
 }
+/* ── contents: the article's sections ─────────────────────────────────────
+   Under the title on narrower screens; in the margin beside the text, staying
+   in view and marking the section being read, where there is room. */
+.toc {
+    margin-block: calc(-1 * var(--space-4)) var(--space-12);
+}
+.toc-label {
+    margin-block-end: var(--space-2);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+}
+.toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Under the title, each entry is a full 44px row for a thumb. */
+.toc li {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+.toc a {
+    padding-block: 0.625rem;
+}
+.toc .toc-h3 {
+    padding-inline-start: var(--space-4);
+}
+.toc a {
+    display: block;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: var(--radius-xs);
+    transition: color var(--duration-quick) var(--ease-standard);
+}
+.toc a:hover {
+    color: var(--text);
+}
+@media (min-width: 1240px) {
+    .article {
+        position: relative;
+    }
+    /* The full height of the article, so the list inside can stay in view all the way down. */
+    .toc {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: calc(100% + var(--space-12));
+        width: 12rem;
+        margin: 0;
+    }
+    /* In the margin, read with a pointer, the list is set small and close. */
+    .toc li {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+    .toc li + li {
+        margin-block-start: var(--space-1_5);
+    }
+    .toc a {
+        display: inline-block;
+        padding-block: 0;
+    }
+    /* Only in the margin, where the list stays in view, is the section being read marked. */
+    .toc a[aria-current='true'] {
+        color: var(--text);
+        font-weight: 500;
+    }
+    .toc-list {
+        position: sticky;
+        top: calc(4.5rem + var(--space-6));
+        max-height: calc(100svh - 4.5rem - var(--space-16));
+        overflow-y: auto;
+    }
+}
+
 .section-heading {
     margin-block: var(--space-16) var(--space-4);
     color: var(--text-muted);

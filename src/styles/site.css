@@ -16,6 +16,9 @@
 
 html {
     -webkit-text-size-adjust: 100%;
+    /* Taps answer at once: a quick second tap is a second tap, not a zoom.
+       Pinching to zoom still works, for anyone who needs the text larger. */
+    touch-action: manipulation;
 }
 
 body {
