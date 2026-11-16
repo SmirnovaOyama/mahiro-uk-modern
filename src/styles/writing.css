@@ -81,6 +81,13 @@ html {
     letter-spacing: -0.025em;
     text-wrap: balance;
 }
+:lang(zh) .page-title {
+    font-size: clamp(1.75rem, 5vw, 2.75rem);
+    letter-spacing: 0;
+    line-height: 1.25;
+    text-wrap: wrap;
+    word-break: break-word;
+}
 .page-summary {
     margin-block-start: var(--space-4);
     font-family: var(--font-display);
@@ -90,6 +97,14 @@ html {
     letter-spacing: -0.01em;
     color: var(--text-muted);
     text-wrap: pretty;
+}
+:lang(zh) .page-summary {
+    letter-spacing: 0;
+    line-height: 1.6;
+    text-align: justify;
+    text-justify: inter-ideograph;
+    text-wrap: wrap;
+    word-break: break-word;
 }
 .page-meta {
     margin-block-start: var(--space-5);
@@ -277,6 +292,10 @@ html {
     font-weight: 300;
     letter-spacing: -0.02em;
 }
+:lang(zh) .titles {
+    letter-spacing: 0;
+    line-height: 1.5;
+}
 .titles li + li {
     margin-block-start: var(--space-2);
 }
@@ -374,7 +393,11 @@ html {
     text-wrap: pretty;
 }
 :lang(zh) .prose {
-    line-height: 1.9;
+    line-height: 1.85;
+    text-align: justify;
+    text-justify: inter-ideograph;
+    text-wrap: wrap;
+    word-break: break-word;
 }
 /* Running text keeps to about seventy characters a line, so the eye finds the
    next line easily and the words stop short of the margin. Pictures, code,
@@ -485,8 +508,10 @@ html {
 }
 .prose table {
     display: block;
+    width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-collapse: collapse;
     font-size: 0.9375rem;
 }
@@ -498,6 +523,18 @@ html {
 }
 .prose th {
     font-weight: 500;
+    white-space: nowrap;
+}
+:lang(zh) .prose th {
+    white-space: nowrap;
+}
+:lang(zh) .prose td {
+    word-break: keep-all;
+    white-space: nowrap;
+}
+:lang(zh) .prose td:has(p, br, ul, ol) {
+    white-space: normal;
+    word-break: break-word;
 }
 .prose input[type='checkbox'] {
     margin-inline-end: 0.4em;
