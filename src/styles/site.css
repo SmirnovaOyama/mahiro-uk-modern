@@ -51,6 +51,12 @@ button {
     color: inherit;
 }
 
+/* Headings the site focuses after moving to a page (router.ts) are for screen
+   readers; a ring around them only looks like a box drawn on the page. */
+[tabindex='-1']:focus {
+    outline: none;
+}
+
 :focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;

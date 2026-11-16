@@ -392,13 +392,22 @@ export const collectionsOf = (db: D1Database, articleId: number, now: number): P
 // ── friends
 
 export async function listFriends(db: D1Database): Promise<Friend[]> {
-    const { results } = await db.prepare('SELECT name, url, note FROM friends ORDER BY position').all<Friend>();
+    // Until migration 0003 reaches a database, it has no avatar column; the page
+    // still shows everyone, just with their initials, rather than failing.
+    const { results } = await db
+        .prepare('SELECT name, url, note, avatar FROM friends ORDER BY position')
+        .all<Friend>()
+        .catch(async (error: unknown) => {
+            if (!String(error).includes('no such column')) throw error;
+            const old = await db.prepare("SELECT name, url, note, '' AS avatar FROM friends ORDER BY position").all<Friend>();
+            return old;
+        });
     return results;
 }
 
 /** Puts the whole list in place at once, in the order given. */
 export async function saveFriends(db: D1Database, friends: Friend[]): Promise<Friend[]> {
-    const insert = db.prepare('INSERT INTO friends (position, name, url, note) VALUES (?, ?, ?, ?)');
-    await db.batch([db.prepare('DELETE FROM friends'), ...friends.map((f, i) => insert.bind(i, f.name, f.url, f.note))]);
+    const insert = db.prepare('INSERT INTO friends (position, name, url, note, avatar) VALUES (?, ?, ?, ?, ?)');
+    await db.batch([db.prepare('DELETE FROM friends'), ...friends.map((f, i) => insert.bind(i, f.name, f.url, f.note, f.avatar))]);
     return listFriends(db);
 }

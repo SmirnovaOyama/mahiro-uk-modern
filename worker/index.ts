@@ -9,6 +9,7 @@
 //   /admin/preview/:id                                                a draft, for its author
 //   /api/...                                                          the editor's API
 import type { ArticleUpdate, CollectionUpdate, Friend } from '../src/shared/api.ts';
+import { avatarSrc } from '../src/shared/friends.ts';
 import { renderMarkdown } from '../src/shared/markdown.ts';
 import { checkPassword, clearCookie, isSignedIn, sameOrigin, sessionCookie } from './auth.ts';
 import * as db from './db.ts';
@@ -145,6 +146,8 @@ async function api(request: Request, env: Env, url: URL): Promise<Response> {
                 name: str(f?.name, 'name', 200),
                 url: str(f?.url, 'url', 2000),
                 note: str(f?.note, 'note', 500),
+                // Only a picture this site stores; anything else is dropped rather than refused.
+                avatar: avatarSrc(str(f?.avatar ?? '', 'avatar', 300)) ?? '',
             }));
             return json(await db.saveFriends(env.DB, list));
         }

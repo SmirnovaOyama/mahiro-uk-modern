@@ -116,6 +116,32 @@ main.reading-main {
 .titles.friends li + li {
     margin-block-start: var(--space-5);
 }
+/* Their picture, a little taller than a capital, as mine is on the home page. */
+.friend-avatar {
+    display: inline-block;
+    flex: none;
+    width: 1.2em;
+    height: 1.2em;
+    margin-inline-end: 0.28em;
+    border-radius: var(--radius-full);
+    vertical-align: -0.24em;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+}
+/* No picture yet: the first letter of their name in a quiet terracotta circle. */
+.friend-initial {
+    display: inline-grid;
+    place-items: center;
+    background: var(--illustration-wash);
+    color: var(--accent-ink);
+    font-size: 0.55em;
+    width: calc(1.2em / 0.55);
+    height: calc(1.2em / 0.55);
+    line-height: 1;
+    font-weight: 500;
+    vertical-align: 0.05em;
+    text-decoration: none;
+}
 .friend-note {
     color: var(--text-muted);
     font-family: var(--font-sans);

@@ -59,6 +59,8 @@ export interface Friend {
     name: string;
     url: string;
     note: string;
+    /** Their picture: an uploaded /media/ address, or empty to show their initial. */
+    avatar: string;
 }
 
 export interface ApiError {

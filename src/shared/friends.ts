@@ -12,5 +12,8 @@ export function friendHref(typed: string): string | null {
     }
 }
 
+/** An avatar the page may show: only pictures this site stores itself. */
+export const avatarSrc = (typed: string): string | null => (/^\/media\/[\w./-]+$/.test(typed.trim()) ? typed.trim() : null);
+
 /** "example.com", for a friend with no name yet. */
 export const hostOf = (href: string): string => new URL(href).host.replace(/^www\./, '');

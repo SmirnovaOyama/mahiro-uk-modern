@@ -5,7 +5,7 @@ import { icon } from '../src/icons.ts';
 import katex from 'katex';
 import { escapeHtml as esc, hasMath, renderMarkdown } from '../src/shared/markdown.ts';
 import type { Friend } from '../src/shared/api.ts';
-import { friendHref, hostOf } from '../src/shared/friends.ts';
+import { avatarSrc, friendHref, hostOf } from '../src/shared/friends.ts';
 
 const KATEX_VERSION = katex.version;
 import type { LiveArticle, LiveCollection, LiveListing } from './db.ts';
@@ -133,10 +133,20 @@ ${titles(c.articles.map(a => ({ href: articleHref(a), title: a.title })), true)}
 }
 
 /** The people the blog points to, or null while there's nobody to show. */
+/**
+ * A friend's picture before their name, round like mine on the home page; with
+ * none set, a soft circle holding the first letter of their name.
+ */
+function friendFace(f: { name: string; avatar: string | null }): string {
+    if (f.avatar) return `<img class="friend-avatar" src="${esc(f.avatar)}" alt="" width="96" height="96" loading="lazy" decoding="async">`;
+    const initial = [...f.name.trim()][0]?.toLocaleUpperCase() ?? '';
+    return `<span class="friend-avatar friend-initial" aria-hidden="true">${esc(initial)}</span>`;
+}
+
 export function friendsPage(friends: Friend[]): Page | null {
     const shown = friends.flatMap(f => {
         const href = friendHref(f.url);
-        return href ? [{ href, name: f.name.trim() || hostOf(href), note: f.note.trim() || hostOf(href) }] : [];
+        return href ? [{ href, name: f.name.trim() || hostOf(href), note: f.note.trim() || hostOf(href), avatar: avatarSrc(f.avatar ?? '') }] : [];
     });
     if (!shown.length) return null;
     return {
@@ -145,7 +155,7 @@ export function friendsPage(friends: Friend[]): Page | null {
         path: '/friends',
         main: `<header class="page-head"><h1 class="page-title">Friends</h1></header>
 <ul class="titles friends">${shown
-            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${esc(f.name)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
+            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${friendFace(f)}${esc(f.name)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
             .join('')}</ul>`,
     };
 }
