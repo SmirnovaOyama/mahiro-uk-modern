@@ -233,6 +233,24 @@ html {
         max-height: calc(100svh - 4.5rem - var(--space-16));
         overflow-y: auto;
     }
+    /* A list longer than the screen follows the reader as a whole (reading.ts),
+       so it carries no bar of its own. It can still be scrolled to look ahead;
+       the page stays put while it is, and entries cut off at an edge fade
+       out there rather than stopping mid-line. */
+    .toc-list {
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        mask-image: linear-gradient(
+            to bottom,
+            transparent,
+            #000 var(--cut-above, 0px),
+            #000 calc(100% - var(--cut-below, 0px)),
+            transparent
+        );
+    }
+    .toc-list::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 .section-heading {
