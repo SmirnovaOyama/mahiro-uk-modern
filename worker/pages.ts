@@ -156,7 +156,7 @@ ${titles(c.articles.map(a => ({ href: articleHref(a), title: a.title })), true)}
 
 /** The people the blog points to, or null while there's nobody to show. */
 /**
- * A friend's picture before their name, round like mine on the home page; with
+ * A friend's picture after their name, round like mine on the home page; with
  * none set, a soft circle holding the first letter of their name.
  */
 function friendFace(f: { name: string; avatar: string | null }): string {
@@ -177,7 +177,7 @@ export function friendsPage(friends: Friend[]): Page | null {
         path: '/friends',
         main: `<header class="page-head"><h1 class="page-title">Friends</h1></header>
 <ul class="titles friends">${shown
-            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${friendFace(f)}${esc(f.name)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
+            .map(f => `<li><a href="${esc(f.href)}" rel="friend noopener">${esc(f.name)}${friendFace(f)}</a><span class="friend-note">${esc(f.note)}</span></li>`)
             .join('')}</ul>`,
     };
 }

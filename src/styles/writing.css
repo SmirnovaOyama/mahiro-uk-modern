@@ -215,13 +215,13 @@ html {
 .titles.friends li + li {
     margin-block-start: var(--space-5);
 }
-/* Their picture, a little taller than a capital, as mine is on the home page. */
+/* Their picture, after their name, a little taller than a capital, as mine is on the home page. */
 .friend-avatar {
     display: inline-block;
     flex: none;
     width: 1.2em;
     height: 1.2em;
-    margin-inline-end: 0.28em;
+    margin-inline-start: 0.28em;
     border-radius: var(--radius-full);
     vertical-align: -0.24em;
     object-fit: cover;
