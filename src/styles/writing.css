@@ -155,6 +155,58 @@ html {
         color: var(--text);
         font-weight: 500;
     }
+    /* The reading marker (reading.ts): a hairline track down the list's left
+       edge, a fainter terracotta fill up to where the reader is, and a short
+       terracotta bar that glides along it, never jumping. */
+    .toc-list.is-following ol {
+        padding-inline-start: var(--space-4);
+    }
+    .toc-list.is-following .toc-label {
+        padding-inline-start: var(--space-4);
+    }
+    .toc-track,
+    .toc-fill,
+    .toc-marker {
+        display: none;
+        position: absolute;
+        inset-inline-start: 0;
+        width: 1px;
+        border-radius: var(--radius-full);
+        pointer-events: none;
+    }
+    .toc-list.is-following :is(.toc-track, .toc-fill, .toc-marker) {
+        display: block;
+    }
+    .toc-track {
+        background: var(--border);
+    }
+    .toc-fill {
+        background: var(--accent-ink);
+        opacity: 0.32;
+    }
+    .toc-marker {
+        top: 0;
+        inset-inline-start: -0.5px;
+        width: 2px;
+        background: var(--accent-ink);
+    }
+    .toc-list.is-settled .toc-marker {
+        transition:
+            transform var(--duration-slow) var(--ease-out),
+            height var(--duration-slow) var(--ease-out);
+    }
+    .toc-list.is-settled .toc-fill {
+        transition: height var(--duration-slow) var(--ease-out);
+    }
+    .toc-list.is-following a {
+        transition:
+            color var(--duration-base) var(--ease-standard),
+            transform var(--duration-base) var(--ease-out);
+    }
+    /* The entry being read leans a hair towards the marker. */
+    .toc-list.is-following a[aria-current='true'] {
+        transform: translateX(2px);
+    }
     .toc-list {
         position: sticky;
         top: calc(4.5rem + var(--space-6));
@@ -492,4 +544,12 @@ html {
 .prose .katex-error {
     font-family: var(--font-mono);
     font-size: 0.86em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toc-list .toc-marker,
+    .toc-list .toc-fill,
+    .toc-list a {
+        transition: none !important;
+    }
 }
