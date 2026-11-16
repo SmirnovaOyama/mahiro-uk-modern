@@ -1,4 +1,4 @@
-import type { ApiError, Article, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend } from '../shared/api.ts';
+import type { ApiError, Article, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend, Project } from '../shared/api.ts';
 
 export class ApiFailure extends Error {
     constructor(
@@ -61,4 +61,9 @@ export const api = {
 
     friends: () => call<Friend[]>('GET', '/api/friends'),
     saveFriends: (friends: Friend[]) => call<Friend[]>('PUT', '/api/friends', { friends }),
+
+    projects: () => call<Project[]>('GET', '/api/projects'),
+    /** Saves the list; the answer carries what the Worker found at each link. */
+    saveProjects: (projects: Project[]) =>
+        call<Project[]>('PUT', '/api/projects', { projects: projects.map(p => ({ ...p, links: p.links.map(l => ({ url: l.url })) })) }),
 };

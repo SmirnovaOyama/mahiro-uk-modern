@@ -533,3 +533,81 @@ button:disabled {
             vt-drift-in var(--vt-in) var(--ease-spring) calc(var(--vt-out) * 0.4) both;
     }
 }
+
+/* ── projects: the rule large, then the name, the line, and its links ───── */
+
+.project-fields .project-rule-input {
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1.1875rem;
+    font-weight: 300;
+    line-height: 2rem;
+}
+.project-fields .project-name-input {
+    color: var(--text);
+    font-weight: 500;
+}
+.project-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+}
+.link-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+.project-fields .link-url {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+.link-line .tool {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+.link-row:hover .link-line .tool,
+.link-row:focus-within .link-line .tool {
+    opacity: 1;
+}
+/* What the Worker found at the address, under it. */
+.link-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+}
+.link-preview.is-quiet {
+    color: var(--text-disabled);
+}
+.link-preview.is-off {
+    color: var(--danger);
+}
+.link-preview img {
+    flex: none;
+    width: 3.5rem;
+    aspect-ratio: 1.91;
+    height: auto;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+}
+.link-preview-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.link-preview-title {
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.adder.link-adder {
+    margin: 0;
+    font-size: 0.75rem;
+}
