@@ -1,9 +1,8 @@
 // The places to go, folded on a phone. Four links, the theme switch and the
 // blog's name don't fit one narrow line, so there the links fold away behind
-// the name of the part of the site being read ("‹ Writing"). Opened, they
-// spring out of it leftwards, nearest first, across the whole line while the
-// name and the theme switch step aside; the chevron at the end folds them back
-// into where they came from. Wider screens, and readers without scripts, get
+// the name of the part of the site being read ("‹ Writing"). Opened, the line
+// gives way to them; the chevron at the end folds them away again. The
+// movement itself is all in writing.css. Wider screens, and readers without scripts, get
 // the plain row of links as ever.
 import { icon } from './icons.ts';
 
@@ -47,23 +46,10 @@ export function foldNav(): () => void {
 
     const open = (): boolean => top.classList.contains('is-open');
 
-    /** Where each piece starts from when it springs out: the folded label's middle. */
+    /** The order the pieces come in: the nearest (the folding chevron) first, each further one a beat later. */
     const measure = (): void => {
-        const from = toggle.getBoundingClientRect();
-        const box = list.getBoundingClientRect();
         const pieces = [...list.children].filter((el): el is HTMLElement => el instanceof HTMLElement && el.offsetParent !== null);
-        const middle = from.left + from.width / 2;
-        pieces.forEach((el, i) => {
-            const centre = box.left + el.offsetLeft + el.offsetWidth / 2;
-            // Moved into its folded place at once, not slid there, so the opening starts from it.
-            el.style.transition = 'none';
-            el.style.setProperty('--from', `${(middle - centre).toFixed(1)}px`);
-            // The nearest comes out first; each further one a beat later.
-            el.style.setProperty('--delay', `${(pieces.length - 1 - i) * 28}ms`);
-        });
-        void list.offsetWidth;
-        pieces.forEach(el => getComputedStyle(el).transform);
-        pieces.forEach(el => (el.style.transition = ''));
+        pieces.forEach((el, i) => el.style.setProperty('--delay', `${(pieces.length - 1 - i) * 30}ms`));
     };
 
     const set = (opening: boolean, focus = false): void => {
@@ -74,7 +60,9 @@ export function foldNav(): () => void {
         list.inert = narrow.matches && !opening;
         if (!focus) return;
         if (opening) list.querySelector<HTMLElement>('a:not([aria-current="page"])')?.focus({ preventScroll: true });
-        else toggle.focus({ preventScroll: true });
+        // Back to the label for a keyboard; a click leaves no ring behind.
+        else if (list.matches(':focus-within') && document.activeElement?.matches(':focus-visible')) toggle.focus({ preventScroll: true });
+        else (document.activeElement as HTMLElement | null)?.blur();
     };
 
     const onToggle = (): void => set(true, true);

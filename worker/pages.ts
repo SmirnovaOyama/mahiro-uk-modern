@@ -238,7 +238,6 @@ export function projectsPage(projects: Project[]): Page | null {
         path: '/projects',
         main: `<header class="page-head">
     <h1 class="page-title">Projects</h1>
-    <p class="page-summary">Quiet, deliberate software, each piece held to one rule it does not break.</p>
 </header>
 <ol class="projects">${shown
             .map(p => {

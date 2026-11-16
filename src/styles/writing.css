@@ -46,17 +46,18 @@
 
 /* ── the places to go, folded on a phone (nav.ts) ─────────────────────
    Folded, the line holds the blog's name, the part being read ("‹ Writing")
-   and the theme switch. Opened, the links spring out of that label to the
-   left, nearest first, a hair past their places and back, while the rest of
-   the line steps aside; folded again, they slide back into it. The links are
-   laid out where they'll land all along, so only their movement changes. */
+   and the theme switch. Opened, that line gives way and the links slide in
+   a short step from the right, nearest first, with a little spring; folded
+   again, they leave as one, a few pixels to the right and out, and the line
+   comes back. Few things move, and none of them far. */
 @media (max-width: 420px) {
     .reading-top {
-        /* A bounce with a little more give than --ease-spring: it carries further. */
+        /* A spring with a touch more give than --ease-spring. */
         --ease-unfold: linear(
-            0, 0.04 1.6%, 0.16 3.6%, 0.36 6.4%, 0.6 10%, 0.8 13.8%, 0.94 17.6%, 1.03 21.6%, 1.07 25.6%,
-            1.075 29%, 1.06 33%, 1.03 38.5%, 1.005 45%, 0.993 52%, 0.992 58%, 0.997 68%, 1.0005 80%, 1
+            0, 0.04 1.6%, 0.16 3.6%, 0.36 6.4%, 0.6 10%, 0.8 13.8%, 0.94 17.6%, 1.03 21.6%, 1.05 25.6%,
+            1.05 29%, 1.04 33%, 1.02 38.5%, 1.004 45%, 0.996 52%, 0.995 58%, 0.998 68%, 1.0003 80%, 1
         );
+        --fold-out: 180ms;
     }
     .reading-top.can-fold .nav-toggle {
         display: inline-flex;
@@ -70,14 +71,6 @@
     .nav-toggle:hover svg {
         transform: translateX(-2px);
     }
-    .reading-top.can-fold .nav-links {
-        display: flex;
-        align-items: center;
-        position: absolute;
-        inset-block-start: calc(var(--space-5) + env(safe-area-inset-top, 0px));
-        inset-inline-end: calc(var(--space-6) - var(--space-2));
-        pointer-events: none;
-    }
     .reading-top.can-fold .nav-fold {
         display: inline-flex;
     }
@@ -85,38 +78,60 @@
     .reading-top.can-fold .nav-links [aria-current='page'] {
         display: none;
     }
+
+    /* Folded: the links as a group, gone a few pixels to the right. */
+    .reading-top.can-fold .nav-links {
+        display: flex;
+        align-items: center;
+        position: absolute;
+        inset-block-start: calc(var(--space-5) + env(safe-area-inset-top, 0px));
+        inset-inline-end: calc(var(--space-6) - var(--space-2));
+        opacity: 0;
+        transform: translateX(10px);
+        pointer-events: none;
+        transition:
+            opacity var(--fold-out) cubic-bezier(0.4, 0, 1, 1),
+            transform var(--fold-out) cubic-bezier(0.4, 0, 1, 1);
+    }
+    /* Each link waits, out of sight, back where it will slide in from next
+       time; it only goes there once the group has gone. */
     .reading-top.can-fold .nav-links > * {
         opacity: 0;
-        transform: translateX(var(--from, 0px)) scale(0.86);
-        filter: blur(3px);
+        transform: translateX(20px);
         transition:
-            transform var(--duration-slow) var(--ease-standard),
-            opacity var(--duration-quick) var(--ease-standard),
-            filter var(--duration-base) var(--ease-standard),
+            opacity 0s linear var(--fold-out),
+            transform 0s linear var(--fold-out),
             color var(--duration-quick) var(--ease-standard),
             background-color var(--duration-quick) var(--ease-standard);
     }
+    /* The chevron that folds them sits in the theme switch's place, and stays there. */
+    .reading-top.can-fold .nav-links > .nav-fold {
+        transform: none;
+    }
+
+    /* Open: the group is there at once; its links bring themselves in. */
     .reading-top.is-open .nav-links {
+        opacity: 1;
+        transform: none;
         pointer-events: auto;
+        transition: none;
     }
     .reading-top.is-open .nav-links > * {
         opacity: 1;
         transform: none;
-        filter: none;
         transition:
-            transform 620ms var(--ease-unfold) var(--delay, 0ms),
-            opacity var(--duration-base) var(--ease-standard) var(--delay, 0ms),
-            filter var(--duration-slow) var(--ease-standard) var(--delay, 0ms),
+            opacity var(--duration-base) var(--ease-standard) calc(60ms + var(--delay, 0ms)),
+            transform 520ms var(--ease-unfold) calc(60ms + var(--delay, 0ms)),
             color var(--duration-quick) var(--ease-standard),
             background-color var(--duration-quick) var(--ease-standard);
     }
+
+    /* The folded line: it steps out before the links come, and back in as they go. */
     .reading-top.can-fold .home,
     .reading-top.can-fold .nav-toggle,
     .reading-top.can-fold #theme {
         transition:
-            opacity var(--duration-base) var(--ease-standard) 80ms,
-            transform var(--duration-slow) var(--ease-out) 80ms,
-            filter var(--duration-base) var(--ease-standard) 80ms,
+            opacity var(--duration-base) var(--ease-standard) calc(var(--fold-out) * 0.6),
             color var(--duration-quick) var(--ease-standard),
             background-color var(--duration-quick) var(--ease-standard);
     }
@@ -124,20 +139,14 @@
     .reading-top.is-open .nav-toggle,
     .reading-top.is-open #theme {
         opacity: 0;
-        transform: scale(0.94);
-        filter: blur(2px);
         pointer-events: none;
-        transition:
-            opacity var(--duration-quick) var(--ease-standard),
-            transform var(--duration-base) var(--ease-standard),
-            filter var(--duration-quick) var(--ease-standard);
+        transition: opacity 120ms var(--ease-standard);
     }
 }
 @media (max-width: 420px) and (prefers-reduced-motion: reduce) {
-    .reading-top.can-fold .nav-links > *,
-    .reading-top.is-open .nav-links > * {
+    .reading-top.can-fold .nav-links,
+    .reading-top.can-fold .nav-links > * {
         transform: none;
-        filter: none;
     }
 }
 .home {
