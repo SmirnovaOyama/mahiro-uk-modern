@@ -49,8 +49,9 @@ function followContents(): () => void {
 
     // Motion blur: while the marker travels it smears along the line, by as much
     // as it moved, and comes back into focus as it settles. A blur only up and
-    // down (the line runs that way), drawn over the whole rail's area so a thin
-    // vertical stroke is never clipped away.
+    // down (the line runs that way), sized around the marker itself so a long
+    // list never exceeds the browser's filter buffer limit, and taken off when
+    // the marker comes to rest.
     const filter = document.createElementNS(NS, 'filter');
     filter.setAttribute('id', 'toc-motion');
     filter.setAttribute('filterUnits', 'userSpaceOnUse');
@@ -61,7 +62,6 @@ function followContents(): () => void {
     const defs = document.createElementNS(NS, 'defs');
     defs.append(filter);
     rail.prepend(defs);
-    marker.setAttribute('filter', 'url(#toc-motion)');
     const still = matchMedia('(prefers-reduced-motion: reduce)');
     let blur = 0;
     let lastStart: number | null = null;
@@ -70,6 +70,7 @@ function followContents(): () => void {
         blur *= 0.8;
         if (blur < 0.05) blur = 0;
         smear.setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        if (!blur) marker.removeAttribute('filter');
         fading = blur ? requestAnimationFrame(fade) : 0;
     };
     const moved = (start: number): void => {
@@ -78,6 +79,7 @@ function followContents(): () => void {
         if (still.matches || delta < 0.5) return;
         blur = Math.min(7, blur + delta * 0.22);
         smear.setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        marker.setAttribute('filter', 'url(#toc-motion)');
         if (!fading) fading = requestAnimationFrame(fade);
     };
 
@@ -98,6 +100,14 @@ function followContents(): () => void {
         return { top: r.top - box.top + list.scrollTop, height: r.height };
     };
 
+    /** Entries cut off at an edge fade out there, by as much as lies beyond it, up to a line's worth. */
+    const edges = (): void => {
+        const above = list.scrollTop;
+        const below = list.scrollHeight - list.clientHeight - above;
+        list.style.setProperty('--cut-above', `${Math.max(0, Math.min(32, above)).toFixed(1)}px`);
+        list.style.setProperty('--cut-below', `${Math.max(0, Math.min(32, below)).toFixed(1)}px`);
+    };
+
     // The list's own slide. It eases towards where it should be rather than
     // snapping there, so a jump to a far section carries the list along with
     // the marker; its place is kept here as well, since a browser may round
@@ -109,6 +119,7 @@ function followContents(): () => void {
         at += (aim - at) * 0.2;
         if (Math.abs(aim - at) < 0.5) at = aim;
         list.scrollTop = at;
+        edges();
         sliding = at === aim ? 0 : requestAnimationFrame(slide);
     };
     const slideTo = (top: number): void => {
@@ -122,13 +133,6 @@ function followContents(): () => void {
             at = list.scrollTop;
             sliding = requestAnimationFrame(slide);
         }
-    };
-    /** Entries cut off at an edge fade out there, by as much as lies beyond it, up to a line's worth. */
-    const edges = (): void => {
-        const above = list.scrollTop;
-        const below = list.scrollHeight - list.clientHeight - above;
-        list.style.setProperty('--cut-above', `${Math.max(0, Math.min(32, above)).toFixed(1)}px`);
-        list.style.setProperty('--cut-below', `${Math.max(0, Math.min(32, below)).toFixed(1)}px`);
     };
 
     const mark = (): void => {
@@ -160,11 +164,12 @@ function followContents(): () => void {
         list.classList.toggle('is-following', inMargin);
         if (!inMargin) return;
         // The line's path: down beside each entry, at that entry's depth, with a
-        // short slant across the gap wherever the depth changes.
+        // short slant across the gap wherever the depth changes. A hair of width
+        // keeps a straight list's bounding box non-empty for SVG filters.
         const spots = links.map(a => ({ ...place(a), x: a.closest('.toc-h3') ? STEP : 0 }));
         const points: [number, number][] = spots.flatMap(e => [
-            [e.x + 0.5, e.top],
-            [e.x + 0.5, e.top + e.height],
+            [e.x + 1, e.top],
+            [e.x + 1.001, e.top + e.height],
         ]);
         const lengths = [0];
         for (let k = 1; k < points.length; k++) {
@@ -186,28 +191,34 @@ function followContents(): () => void {
         const first = spots[0]!;
         const last = spots.at(-1)!;
         const depth = Math.ceil(last.top + last.height);
-        rail.setAttribute('width', String(STEP + 2));
+        rail.setAttribute('width', String(STEP + 3));
         rail.setAttribute('height', String(depth));
-        filter.setAttribute('x', '-20');
-        filter.setAttribute('y', '-60');
-        filter.setAttribute('width', String(STEP + 42));
-        filter.setAttribute('height', String(depth + 120));
         for (const path of [track, fill, marker]) path.setAttribute('d', d);
 
         const here = spots[current]!;
-        const next = spots[current + 1]?.top ?? here.top + here.height;
-        const y = here.top + (next - here.top) * through;
+        const after = spots[current + 1] ?? here;
+        const y = here.top + (after.top - here.top) * through;
+        const h = here.height + (after.height - here.height) * through;
         const start = along(y);
-        const reach = Math.min(total, along(y + here.height)) - start;
+        const reach = Math.max(4, Math.min(total, along(y + h)) - start);
+        filter.setAttribute('x', '-20');
+        filter.setAttribute('y', String(Math.floor(y - 60)));
+        filter.setAttribute('width', String(STEP + 44));
+        filter.setAttribute('height', String(Math.ceil(h + 120)));
         // The marker: just its own stretch of the path. The fill: everything up to its middle.
         moved(start);
         marker.style.strokeDasharray = `${reach} ${total + 1}`;
         marker.style.strokeDashoffset = `${-start}`;
         fill.style.strokeDasharray = `${start + reach / 2} ${total + 1}`;
 
-        // The list has slid as far through its length as the marker is down it.
+        // The list has slid as far through its length as the marker is down it,
+        // keeping the marker clear of the faded top and bottom edges while sliding.
         const room = list.scrollHeight - list.clientHeight;
-        const down = Math.min(1, Math.max(0, (y - first.top) / Math.max(1, last.top - first.top)));
+        const safe = Math.min(64, list.clientHeight / 4);
+        const startY = Math.max(first.top, safe);
+        const endY = Math.min(last.top, list.scrollHeight - last.height - safe);
+        const span = endY > startY ? (y - startY) / (endY - startY) : (y - first.top) / Math.max(1, last.top - first.top);
+        const down = Math.min(1, Math.max(0, span));
         slideTo(room > 0 ? Math.round(down * room) : 0);
         edges();
     };
@@ -231,11 +242,13 @@ function followContents(): () => void {
     requestAnimationFrame(() => list.classList.add('is-settled'));
     addEventListener('scroll', onScroll, { passive: true });
     addEventListener('resize', onScroll);
+    document.addEventListener('toggle', onScroll, { capture: true, passive: true });
     list.addEventListener('scroll', edges, { passive: true });
     return () => {
         links.forEach(a => a.removeEventListener('click', onClick));
         removeEventListener('scroll', onScroll);
         removeEventListener('resize', onScroll);
+        document.removeEventListener('toggle', onScroll, { capture: true });
         list.removeEventListener('scroll', edges);
         cancelAnimationFrame(fading);
         cancelAnimationFrame(sliding);

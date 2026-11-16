@@ -332,12 +332,17 @@ export async function liveArticles(db: D1Database, now: number, limit = 1000): P
     return results;
 }
 
+const ensureHtml = (a: LiveArticle): LiveArticle =>
+    !a.html.includes('class="callout') && /(?:^|\n) {0,3}(?:::{3,}[ \t]*[a-zA-Z]|>[ \t]*\[![a-zA-Z])/.test(a.body)
+        ? { ...a, html: renderMarkdown(a.body) }
+        : a;
+
 export async function liveArticlesWithBodies(db: D1Database, now: number, limit: number): Promise<LiveArticle[]> {
     const { results } = await db
         .prepare(`SELECT ${LIVE_COLUMNS}, published_html AS html, published_body AS body FROM articles WHERE ${LIVE} ORDER BY published_at DESC LIMIT ?`)
         .bind(now, limit)
         .all<LiveArticle>();
-    return results;
+    return results.map(ensureHtml);
 }
 
 /** Records the link preview picture the editor drew for an article's live version. */
@@ -364,7 +369,7 @@ export async function liveArticle(db: D1Database, slug: string, now: number): Pr
         .prepare(`SELECT ${LIVE_COLUMNS}, published_html AS html, published_body AS body FROM articles WHERE published_slug = ? AND ${LIVE}`)
         .bind(slug, now)
         .first<LiveArticle>();
-    if (article) return { article };
+    if (article) return { article: ensureHtml(article) };
     const moved = await db
         .prepare(`SELECT a.published_slug AS slug FROM slug_redirects r JOIN articles a ON a.id = r.article_id WHERE r.slug = ? AND a.status = 'published' AND a.published_at <= ?`)
         .bind(slug, now)

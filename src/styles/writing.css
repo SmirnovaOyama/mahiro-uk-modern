@@ -402,7 +402,7 @@ html {
 /* Running text keeps to about seventy characters a line, so the eye finds the
    next line easily and the words stop short of the margin. Pictures, code,
    tables and the title still use the column's whole width. */
-.prose > :is(p, ul, ol, blockquote, dl, h2, h3, h4, h5, h6, hr):not(:has(img, video)) {
+.prose > :is(p, ul, ol, blockquote, dl, h2, h3, h4, h5, h6, hr, .callout):not(:has(img, video)) {
     max-width: 36rem;
 }
 .prose > :first-child {
@@ -414,7 +414,8 @@ html {
 .prose blockquote,
 .prose pre,
 .prose table,
-.prose figure {
+.prose figure,
+.prose .callout {
     margin-block: 0 1.25em;
 }
 .prose h2,
@@ -474,6 +475,130 @@ html {
     padding-inline-start: 1.1em;
     border-inline-start: 2px solid var(--border-strong);
     color: var(--text-muted);
+}
+
+/* Callouts: a quiet surface-muted fill set into the page (radius-md), with a
+   16px Lucide mark and a sentence-case title in the status ink, and the body
+   below in the design system's 15px copy. An unfolding callout (<details>)
+   trails a chevron right after the title's last word, like DoseAdvisory. */
+.prose .callout {
+    --callout-ink: var(--accent-ink);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+}
+.prose .callout-info {
+    --callout-ink: var(--status-info);
+}
+.prose .callout-tip,
+.prose .callout-success {
+    --callout-ink: var(--status-positive);
+}
+.prose .callout-question {
+    --callout-ink: var(--status-violet);
+}
+.prose .callout-warning {
+    --callout-ink: var(--warning);
+}
+.prose .callout-danger {
+    --callout-ink: var(--danger);
+}
+.prose .callout-quote {
+    --callout-ink: var(--text-muted);
+}
+.prose .callout-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--callout-ink);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    font-weight: 500;
+    text-align: start;
+}
+.prose .callout > summary.callout-head {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    border-radius: var(--radius-xs);
+}
+.prose .callout > summary.callout-head::-webkit-details-marker {
+    display: none;
+}
+.prose .callout-icon {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    height: 1.5em;
+    height: 1lh;
+    color: var(--callout-ink);
+}
+.prose .callout-title {
+    min-width: 0;
+}
+.prose .callout-chev {
+    display: inline-block;
+    margin-inline-start: var(--space-1);
+    vertical-align: -3px;
+    color: var(--callout-ink);
+    opacity: 0.6;
+    transition:
+        transform var(--duration-base) var(--ease-out),
+        opacity var(--duration-quick) var(--ease-standard);
+}
+.prose .callout > summary.callout-head:hover .callout-chev {
+    opacity: 1;
+}
+.prose .callout[open] > summary.callout-head .callout-chev {
+    transform: rotate(180deg);
+}
+.prose .callout-body {
+    margin-block-start: var(--space-2);
+    padding-inline-start: calc(16px + var(--space-2));
+    font-variant-numeric: tabular-nums;
+}
+.prose details.callout[open] > .callout-body {
+    animation: callout-unfold var(--duration-base) var(--ease-out) both;
+}
+@keyframes callout-unfold {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+.prose .callout-body > :is(p, ul, ol, blockquote, pre, table, figure, .callout) {
+    margin-block: 0 0.75em;
+}
+.prose .callout-body > :last-child {
+    margin-block-end: 0;
+}
+.prose .callout-body :is(strong, b, th) {
+    color: var(--text);
+    font-weight: 500;
+}
+.prose .callout-body a {
+    color: var(--text);
+}
+.prose .callout-body a:hover {
+    color: var(--accent-ink);
+}
+.prose .callout :not(pre) > code {
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--border);
+}
+.prose .callout pre {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 1px var(--border);
 }
 .prose hr {
     margin-block: 3em;
@@ -623,7 +748,11 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
     .toc-rail path,
-    .toc-list a {
+    .toc-list a,
+    .prose .callout-chev {
         transition: none !important;
+    }
+    .prose details.callout[open] > .callout-body {
+        animation: none;
     }
 }
