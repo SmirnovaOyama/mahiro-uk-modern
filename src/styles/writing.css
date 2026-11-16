@@ -155,53 +155,69 @@ html {
         color: var(--text);
         font-weight: 500;
     }
-    /* The reading marker (reading.ts): a hairline track down the list's left
-       edge, a fainter terracotta fill up to where the reader is, and a short
-       terracotta bar that glides along it, never jumping. */
+    /* The reading marker (reading.ts): a hairline down the list's left edge
+       that steps in beside indented entries, a fainter terracotta fill along
+       it up to where the reader is, and a short terracotta stretch that glides
+       along the same path, never jumping. */
     .toc-list.is-following ol {
-        padding-inline-start: var(--space-4);
+        padding-inline-start: calc(var(--space-4) + 2px);
     }
     .toc-list.is-following .toc-label {
-        padding-inline-start: var(--space-4);
+        padding-inline-start: calc(var(--space-4) + 2px);
     }
-    .toc-track,
-    .toc-fill,
-    .toc-marker {
+    .toc-rail {
         display: none;
         position: absolute;
+        inset-block-start: 0;
         inset-inline-start: 0;
-        width: 1px;
-        border-radius: var(--radius-full);
+        overflow: visible;
         pointer-events: none;
     }
-    .toc-list.is-following :is(.toc-track, .toc-fill, .toc-marker) {
+    .toc-list.is-following .toc-rail {
         display: block;
     }
+    .toc-rail path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
     .toc-track {
-        background: var(--border);
+        stroke: var(--border);
+        stroke-width: 1;
     }
     .toc-fill {
-        background: var(--accent-ink);
-        opacity: 0.32;
+        stroke: var(--accent-ink);
+        stroke-opacity: 0.32;
+        stroke-width: 1;
     }
     .toc-marker {
-        top: 0;
-        inset-inline-start: -0.5px;
-        width: 2px;
-        background: var(--accent-ink);
+        stroke: var(--accent-ink);
+        stroke-width: 2;
     }
     .toc-list.is-settled .toc-marker {
         transition:
-            transform var(--duration-slow) var(--ease-out),
-            height var(--duration-slow) var(--ease-out);
+            stroke-dasharray var(--duration-slow) var(--ease-out),
+            stroke-dashoffset var(--duration-slow) var(--ease-out);
     }
     .toc-list.is-settled .toc-fill {
-        transition: height var(--duration-slow) var(--ease-out);
+        transition: stroke-dasharray var(--duration-slow) var(--ease-out);
     }
+    /* Depth of field: entries further from the reading head soften and fade,
+       and come back into focus as the marker nears them. Pointing at the list,
+       or moving into it with the keyboard, brings every entry into focus. */
     .toc-list.is-following a {
+        --away: 0;
+        filter: blur(max(0px, (min(var(--away), 4) - 0.6) * 0.45px));
+        opacity: calc(1 - min(var(--away), 4) * 0.12);
         transition:
             color var(--duration-base) var(--ease-standard),
-            transform var(--duration-base) var(--ease-out);
+            transform var(--duration-base) var(--ease-out),
+            filter var(--duration-slow) var(--ease-out),
+            opacity var(--duration-slow) var(--ease-out);
+    }
+    .toc-list.is-following:is(:hover, :focus-within) a {
+        filter: none;
+        opacity: 1;
     }
     /* The entry being read leans a hair towards the marker. */
     .toc-list.is-following a[aria-current='true'] {
@@ -547,8 +563,7 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .toc-list .toc-marker,
-    .toc-list .toc-fill,
+    .toc-rail path,
     .toc-list a {
         transition: none !important;
     }

@@ -17,10 +17,12 @@ function sectionAt(target: Element, y: number): HTMLElement | null {
 
 /**
  * Follows the reader through the contents list. The section being read is
- * marked, and in the margin a thin terracotta marker glides down the list in
- * step with the scroll: within a section it moves from that entry towards the
- * next as the section is read, so it is always exactly as far down the list as
- * the reader is through the article. A faint line behind it fills to match.
+ * marked, and in the margin a hairline runs down the list, stepping in beside
+ * each indented entry and back out, so it follows the list's own shape. A
+ * short terracotta marker glides along that line in step with the scroll:
+ * within a section it moves from that entry towards the next as the section is
+ * read, so it is always as far down the list as the reader is through the
+ * article, and a faint terracotta line fills the path behind it.
  */
 function followContents(): () => void {
     const list = document.querySelector<HTMLElement>('.toc-list');
@@ -29,14 +31,19 @@ function followContents(): () => void {
     const headings = links.map(a => document.getElementById(decodeURIComponent(a.hash.slice(1))));
     const prose = document.querySelector<HTMLElement>('.prose');
 
-    const track = document.createElement('span');
-    track.className = 'toc-track';
-    const fill = document.createElement('span');
-    fill.className = 'toc-fill';
-    const marker = document.createElement('span');
-    marker.className = 'toc-marker';
-    for (const el of [track, fill, marker]) el.setAttribute('aria-hidden', 'true');
-    list.append(track, fill, marker);
+    const NS = 'http://www.w3.org/2000/svg';
+    const rail = document.createElementNS(NS, 'svg');
+    rail.setAttribute('class', 'toc-rail');
+    rail.setAttribute('aria-hidden', 'true');
+    const [track, fill, marker] = ['toc-track', 'toc-fill', 'toc-marker'].map(name => {
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('class', name);
+        rail.append(path);
+        return path;
+    }) as [SVGPathElement, SVGPathElement, SVGPathElement];
+    list.append(rail);
+    /** How far in, in pixels, the line steps beside an indented entry. */
+    const STEP = 16;
 
     let queued = false;
     /** A section just chosen from the list stays marked until the reader scrolls on their own. */
@@ -80,17 +87,48 @@ function followContents(): () => void {
         const inMargin = list.closest('.toc') !== null && getComputedStyle(list).position === 'sticky';
         list.classList.toggle('is-following', inMargin);
         if (!inMargin) return;
-        const here = place(links[current]!);
-        const next = links[current + 1] ? place(links[current + 1]!).top : here.top + here.height;
+        // The line's path: down beside each entry, at that entry's depth, with a
+        // short slant across the gap wherever the depth changes.
+        const spots = links.map(a => ({ ...place(a), x: a.closest('.toc-h3') ? STEP : 0 }));
+        const points: [number, number][] = spots.flatMap(e => [
+            [e.x + 0.5, e.top],
+            [e.x + 0.5, e.top + e.height],
+        ]);
+        const lengths = [0];
+        for (let k = 1; k < points.length; k++) {
+            const [ax, ay] = points[k - 1]!;
+            const [bx, by] = points[k]!;
+            lengths.push(lengths[k - 1]! + Math.hypot(bx - ax, by - ay));
+        }
+        const total = lengths.at(-1)!;
+        /** The distance along the path to where it reaches height y. */
+        const along = (y: number): number => {
+            for (let k = 1; k < points.length; k++) {
+                const [, ay] = points[k - 1]!;
+                const [, by] = points[k]!;
+                if (y <= by) return lengths[k - 1]! + (by > ay ? Math.max(0, (y - ay) / (by - ay)) : 0) * (lengths[k]! - lengths[k - 1]!);
+            }
+            return total;
+        };
+        const d = `M${points.map(([x, y]) => `${x} ${y}`).join(' L')}`;
+        const listBox = list.getBoundingClientRect();
+        rail.setAttribute('width', String(STEP + 2));
+        rail.setAttribute('height', String(Math.ceil(listBox.height)));
+        for (const path of [track, fill, marker]) path.setAttribute('d', d);
+
+        const here = spots[current]!;
+        const next = spots[current + 1]?.top ?? here.top + here.height;
         const y = here.top + (next - here.top) * through;
-        const first = place(links[0]!).top;
-        const last = place(links.at(-1)!);
-        marker.style.transform = `translateY(${y}px)`;
-        marker.style.height = `${here.height}px`;
-        track.style.top = `${first}px`;
-        track.style.height = `${last.top + last.height - first}px`;
-        fill.style.top = `${first}px`;
-        fill.style.height = `${Math.max(0, y + here.height / 2 - first)}px`;
+        const start = along(y);
+        const reach = Math.min(total, along(y + here.height)) - start;
+        // The marker: just its own stretch of the path. The fill: everything up to its middle.
+        // Depth of field: each entry's distance from the reading head, in entries,
+        // which the stylesheet turns into a soft blur and fade.
+        const head = current + through;
+        links.forEach((a, i) => a.style.setProperty('--away', Math.abs(i - head).toFixed(3)));
+        marker.style.strokeDasharray = `${reach} ${total + 1}`;
+        marker.style.strokeDashoffset = `${-start}`;
+        fill.style.strokeDasharray = `${start + reach / 2} ${total + 1}`;
     };
     const onScroll = (): void => {
         // The jump a click starts, smooth or not, is over within a second; after that, scrolling is the reader's.
@@ -116,9 +154,7 @@ function followContents(): () => void {
         links.forEach(a => a.removeEventListener('click', onClick));
         removeEventListener('scroll', onScroll);
         removeEventListener('resize', onScroll);
-        track.remove();
-        fill.remove();
-        marker.remove();
+        rail.remove();
     };
 }
 
