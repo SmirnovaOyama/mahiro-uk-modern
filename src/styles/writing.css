@@ -104,13 +104,14 @@ html {
     padding: 0;
     list-style: none;
 }
-/* Under the title, each entry is a full 44px row for a thumb. */
+/* Under the title: text large enough to read and hit, in rows close enough
+   to read as one list (36px apart, each row its own tap area). */
 .toc li {
     font-size: 1rem;
     line-height: 1.5rem;
 }
 .toc a {
-    padding-block: 0.625rem;
+    padding-block: 0.375rem;
 }
 .toc .toc-h3 {
     padding-inline-start: var(--space-4);
