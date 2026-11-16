@@ -3,7 +3,7 @@
 import config from '../src/config.ts';
 import { icon } from '../src/icons.ts';
 import katex from 'katex';
-import { escapeHtml as esc, hasMath, renderMarkdown } from '../src/shared/markdown.ts';
+import { escapeHtml as esc, hasHan, hasMath, renderMarkdown } from '../src/shared/markdown.ts';
 import type { Friend } from '../src/shared/api.ts';
 import { avatarSrc, friendHref, hostOf } from '../src/shared/friends.ts';
 
@@ -207,9 +207,12 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
     if (!template.ok) return new Response('The page template is missing. Run `npm run build`.', { status: 500 });
     const canonical = new URL(page.path, url).href;
 
+    const isZh = hasHan(page.title) || hasHan(page.description);
+
     const rewritten = new HTMLRewriter()
         .on('html', {
             element: e => {
+                if (isZh) e.setAttribute('lang', 'zh');
                 if (page.prev) e.setAttribute('data-prev', page.prev);
                 if (page.next) e.setAttribute('data-next', page.next);
             },
