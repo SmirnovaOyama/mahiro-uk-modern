@@ -307,6 +307,15 @@ export function mountHome(): () => void {
     gh.href = config.github;
     gh.innerHTML = githubMark('', 18);
 
+    const controls = document.querySelector<HTMLElement>('.controls');
+    const icp = document.createElement('a');
+    icp.className = 'icp';
+    icp.href = 'https://icp.gov.moe/?keyword=20255514';
+    icp.target = '_blank';
+    icp.rel = 'noopener';
+    icp.textContent = '萌ICP备20255514号';
+    controls?.append(icp);
+
     render();
     const clock = window.setInterval(tick, 20_000);
 
