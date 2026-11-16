@@ -2,7 +2,7 @@
 // in the reading page's own type, so what you write looks like what readers get.
 import { icon } from '../icons.ts';
 import type { Article, ArticleSummary } from '../shared/api.ts';
-import { slugify } from '../shared/slug.ts';
+import { hasHan, slugify } from '../shared/slug.ts';
 import { drawCard } from './card.ts';
 import { api, ApiFailure } from './api.ts';
 import { autosave, describe, type SaveState } from './autosave.ts';
@@ -38,7 +38,9 @@ export function grow(el: HTMLTextAreaElement): void {
 export function articleView(initial: Article, ctx: ArticleContext): View {
     let article = initial;
     // The address follows the title until the article has been out in the world.
-    const slugFollows = !article.publishedSlug && !article.republishedAt;
+    // One still written in Chinese follows it once more, into pinyin; the old
+    // address then leads to the new one.
+    const slugFollows = (!article.publishedSlug && !article.republishedAt) || hasHan(article.slug);
 
     const title = h('textarea', { class: 'title-input', rows: 1, placeholder: 'Title', 'aria-label': 'Title', value: article.title });
     const summary = h('textarea', { class: 'summary-input', rows: 1, placeholder: 'Summary', 'aria-label': 'Summary', value: article.summary });
@@ -331,6 +333,8 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
         mounted() {
             onResize();
             if (!article.title) title.focus();
+            // An address that was written in Chinese is rewritten into pinyin.
+            if (hasHan(article.slug)) changed();
             // Published before previews were drawn: make its picture now, once.
             if (article.state !== 'draft' && !article.card) void makeCard();
         },

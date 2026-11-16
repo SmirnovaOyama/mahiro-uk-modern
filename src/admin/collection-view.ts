@@ -1,7 +1,7 @@
 // A collection: its title, a line about it, and its articles in reading order.
 import { icon } from '../icons.ts';
 import type { ArticleSummary, Collection, CollectionSummary } from '../shared/api.ts';
-import { slugify } from '../shared/slug.ts';
+import { hasHan, slugify } from '../shared/slug.ts';
 import { api, ApiFailure } from './api.ts';
 import { grow, type View } from './article-view.ts';
 import type { MenuEntry } from '../menu.ts';
@@ -21,7 +21,8 @@ export function collectionView(initial: Collection, ctx: CollectionContext): Vie
     let collection = initial;
     let order = collection.articles.map(a => a.id);
     // Its page only exists once it holds a published article; until then nobody can have linked to it.
-    const slugFollows = !collection.articles.some(a => a.state === 'published');
+    // An address still written in Chinese is remade in pinyin all the same.
+    const slugFollows = !collection.articles.some(a => a.state === 'published') || hasHan(collection.slug);
 
     const title = h('textarea', { class: 'title-input', rows: 1, placeholder: 'Title', 'aria-label': 'Title', value: collection.title });
     const description = h('textarea', { class: 'summary-input', rows: 1, placeholder: 'Summary', 'aria-label': 'Summary', value: collection.description });
@@ -170,6 +171,7 @@ export function collectionView(initial: Collection, ctx: CollectionContext): Vie
             grow(title);
             grow(description);
             if (!collection.title) title.focus();
+            if (hasHan(collection.slug)) saver.touch();
         },
         menu: (target): MenuEntry[] | null | undefined => {
             const row = target.closest<HTMLElement>('.order-item');
