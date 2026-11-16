@@ -216,9 +216,10 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
         })
         .on('.reading-nav', {
             element: e => {
-                if (!friends) return;
-                const here = page.path === '/friends' ? ' aria-current="page"' : '';
-                e.prepend(`<a class="btn-ghost" href="/friends"${here}>Friends</a>`, { html: true });
+                // A missing page borrows /writing's path without being it.
+                const here = (href: string): string => (page.path === href && !page.status ? ' aria-current="page"' : '');
+                const link = (href: string, label: string): string => `<a class="btn-ghost" href="${href}"${here(href)}>${label}</a>`;
+                e.prepend(link('/writing', 'Writing') + (friends ? link('/friends', 'Friends') : ''), { html: true });
             },
         })
         .on('title', { element: e => void e.setInnerContent(page.title) })

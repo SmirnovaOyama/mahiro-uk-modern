@@ -11,6 +11,17 @@
     gap: var(--space-1);
     white-space: nowrap;
 }
+/* Phones: the places to go need the whole line, so the blog's name steps
+   aside (still read out) and its picture stands for it. */
+@media (max-width: 420px) {
+    .reading-top .home-name {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+}
 /* The smallest phones: the header keeps to one line by drawing its pieces closer. */
 @media (max-width: 360px) {
     .reading-top {
