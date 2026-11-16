@@ -443,14 +443,16 @@ button:disabled {
     margin-block-start: 0.125rem;
 }
 
-/* Their picture, at the start of the row: a circle to click, or to drop a picture on. */
+/* Their picture, at the start of the row: a circle to click, or to drop a
+   picture on. As tall as the name's line, so it sits centred beside the name,
+   with the same breathing room the page gives an avatar before a name. */
 .friend-face {
     flex: none;
     display: grid;
     place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-block-start: 0.125rem;
+    width: 2rem;
+    height: 2rem;
+    margin-inline-end: var(--space-3);
     padding: 0;
     overflow: hidden;
     border: 1px dashed var(--border-strong);
@@ -458,7 +460,7 @@ button:disabled {
     background: var(--illustration-wash);
     color: var(--accent-ink);
     font-family: var(--font-display);
-    font-size: 1.0625rem;
+    font-size: 0.9375rem;
     font-weight: 500;
     cursor: pointer;
     transition:
