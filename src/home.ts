@@ -244,12 +244,16 @@ function openLeave(link: HTMLAnchorElement): void {
     leave.hidden = false;
 
     // Wrapped text leaves the box at its widest; pull it in to the longest line actually set.
+    // The card opens from slightly smaller, and on-screen rects carry that scale: measured
+    // as they are, the width comes out a little short, the longest line no longer fits, and
+    // the balanced wrap breaks every line again, leaving an empty strip on the right.
+    const scale = leave.getBoundingClientRect().width / leave.offsetWidth || 1;
     const words = document.createRange();
     words.selectNodeContents($('leave-text'));
     const lines = [...words.getClientRects()];
     // The buttons' own width, never squeezed: the row is laid out at its natural size.
-    const actions = leave.querySelector<HTMLElement>('.leave-actions')!.getBoundingClientRect().width;
-    const text = Math.max(...lines.map(l => l.right)) - Math.min(...lines.map(l => l.left));
+    const actions = leave.querySelector<HTMLElement>('.leave-actions')!.getBoundingClientRect().width / scale;
+    const text = (Math.max(...lines.map(l => l.right)) - Math.min(...lines.map(l => l.left))) / scale;
     const inner = Math.max(actions, text);
     const style = getComputedStyle(leave);
     const frame = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth']
@@ -259,7 +263,7 @@ function openLeave(link: HTMLAnchorElement): void {
 
     // Just under the link, kept on screen; above it if there is no room below.
     const r = link.getBoundingClientRect();
-    const box = leave.getBoundingClientRect();
+    const box = { width: leave.offsetWidth, height: leave.offsetHeight };
     const gap = 10;
     const left = Math.min(Math.max(16, r.left), innerWidth - box.width - 16);
     const below = r.bottom + gap;
