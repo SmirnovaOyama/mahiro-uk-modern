@@ -1,10 +1,11 @@
 // The reader's pages. Each is the built page.html (so it carries the site's own
 // hashed CSS and theme script) with its title, description and <main> filled in.
 import config from '../src/config.ts';
-import { icon } from '../src/icons.ts';
+import { githubMark, gitlabMark, icon } from '../src/icons.ts';
 import katex from 'katex';
 import { escapeHtml as esc, hasHan, hasMath, renderMarkdown } from '../src/shared/markdown.ts';
-import type { Friend } from '../src/shared/api.ts';
+import type { Friend, Project, ProjectLink } from '../src/shared/api.ts';
+import { KIND_LABEL, linkPlace } from '../src/shared/links.ts';
 import { avatarSrc, friendHref, hostOf } from '../src/shared/friends.ts';
 
 const KATEX_VERSION = katex.version;
@@ -184,6 +185,74 @@ export function friendsPage(friends: Friend[]): Page | null {
     };
 }
 
+/** "1.2k" for a count of stars past a thousand. */
+const count = (n: number): string => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1).replace(/\.0$/, '')}k` : String(n));
+
+/** "Nov 2026": when a repository last changed, as briefly as that can be said. */
+const monthYear = (ms: number): string =>
+    new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(ms + config.utcOffsetHours * 3_600_000));
+
+/**
+ * One of a project's links, as a quiet card: where it is, then what that place
+ * says about itself. A repository gives its description, language, stars and
+ * when it last changed; a website its title and description, and its picture
+ * set small beside them. Without a preview it is simply the address.
+ */
+function linkCard(link: ProjectLink): string {
+    const place = linkPlace(link.url);
+    if (!place) return '';
+    const p = link.preview;
+    const mark = place.kind === 'github' ? githubMark('link-mark', 14) : place.kind === 'gitlab' ? gitlabMark('link-mark', 14) : icon('globe', 14);
+    const meta = p
+        ? [p.language, p.stars && place.kind !== 'site' ? `★ ${count(p.stars)}` : '', p.updated ? `Updated ${monthYear(p.updated)}` : '']
+              .filter(Boolean)
+              .map(esc)
+              .join('<span aria-hidden="true"> · </span>')
+        : '';
+    const image = p?.image && place.kind === 'site'
+        ? `<img class="link-card-image" src="${esc(p.image)}" alt="" width="120" height="63" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
+        : '';
+    return `<li><a class="link-card is-${place.kind}${image ? ' has-image' : ''}" href="${esc(place.href)}" rel="noopener">
+    <span class="link-card-text">
+        <span class="link-card-where">${mark}<span>${esc(place.where)}</span></span>
+        ${p?.title ? `<span class="link-card-title">${esc(p.title)}</span>` : `<span class="link-card-title is-quiet">${KIND_LABEL[place.kind]}</span>`}
+        ${p?.description ? `<span class="link-card-about">${esc(p.description)}</span>` : ''}
+        ${meta ? `<span class="link-card-meta">${meta}</span>` : ''}
+    </span>
+    ${image}
+</a></li>`;
+}
+
+/**
+ * What I make, each led by the one rule it keeps rather than by its name: the
+ * rule is set large, like the titles everywhere else, the name and a line
+ * about it follow small, and then its links, each with what it says about
+ * itself. Null while there's nothing to show.
+ */
+export function projectsPage(projects: Project[]): Page | null {
+    const shown = projects.filter(p => p.rule.trim() || p.name.trim());
+    if (!shown.length) return null;
+    return {
+        title: 'Projects',
+        description: 'Software by Smirnova Anya, each piece held to one rule.',
+        path: '/projects',
+        main: `<header class="page-head">
+    <h1 class="page-title">Projects</h1>
+</header>
+<ol class="projects">${shown
+            .map(p => {
+                const cards = p.links.map(linkCard).join('');
+                return `<li class="project">
+    <h2 class="project-rule">${esc(p.rule.trim() || p.name.trim())}</h2>
+    ${p.rule.trim() && p.name.trim() ? `<p class="project-name">${esc(p.name.trim())}</p>` : ''}
+    ${p.about.trim() ? `<p class="project-about">${esc(p.about.trim())}</p>` : ''}
+    ${cards ? `<ul class="link-cards">${cards}</ul>` : ''}
+</li>`;
+            })
+            .join('')}</ol>`,
+    };
+}
+
 export const notFound = (): Page => ({
     title: 'Not found',
     description: 'Not found.',
@@ -196,12 +265,16 @@ export const notFound = (): Page => ({
 /** Fills the built page.html. */
 export async function respond(env: Env, request: Request, page: Page): Promise<Response> {
     const url = new URL(request.url);
-    const [template, friends] = await Promise.all([
+    const [template, friends, projects] = await Promise.all([
         env.ASSETS.fetch(new URL('/page', url)),
-        // The way to the friends page appears once there's someone on it.
+        // The ways to the friends and projects pages appear once there's something on them.
         env.DB.prepare('SELECT url FROM friends')
             .all<{ url: string }>()
             .then(r => r.results.some(f => friendHref(f.url)))
+            .catch(() => false),
+        env.DB.prepare("SELECT 1 FROM projects WHERE trim(name) != '' OR trim(rule) != '' LIMIT 1")
+            .first()
+            .then(Boolean)
             .catch(() => false),
     ]);
     if (!template.ok) return new Response('The page template is missing. Run `npm run build`.', { status: 500 });
@@ -217,12 +290,12 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
                 if (page.next) e.setAttribute('data-next', page.next);
             },
         })
-        .on('.reading-nav', {
+        .on('.nav-links', {
             element: e => {
                 // A missing page borrows /writing's path without being it.
                 const here = (href: string): string => (page.path === href && !page.status ? ' aria-current="page"' : '');
                 const link = (href: string, label: string): string => `<a class="btn-ghost" href="${href}"${here(href)}>${label}</a>`;
-                e.prepend(link('/writing', 'Writing') + (friends ? link('/friends', 'Friends') : ''), { html: true });
+                e.prepend(link('/writing', 'Writing') + (friends ? link('/friends', 'Friends') : '') + (projects ? link('/projects', 'Projects') : ''), { html: true });
             },
         })
         .on('title', { element: e => void e.setInnerContent(page.title) })
@@ -303,7 +376,7 @@ ${entries}
     return new Response(xml, { headers: { 'content-type': 'application/atom+xml; charset=utf-8', 'cache-control': 'public, max-age=300' } });
 }
 
-export function sitemap(origin: string, articles: LiveListing[], collections: LiveCollection[], friends: boolean): Response {
+export function sitemap(origin: string, articles: LiveListing[], collections: LiveCollection[], friends: boolean, projects: boolean): Response {
     const entry = (path: string, modified?: number): string =>
         `<url><loc>${esc(origin + path)}</loc>${modified ? `<lastmod>${isoDate(modified)}</lastmod>` : ''}</url>`;
     const newest = (list: LiveListing[]): number => Math.max(0, ...list.map(a => a.republishedAt));
@@ -315,6 +388,7 @@ ${[
     ...articles.map(a => entry(articleHref(a), a.republishedAt)),
     ...collections.map(c => entry(`/collections/${encodeURIComponent(c.slug)}`, newest(c.articles))),
     friends && entry('/friends'),
+    projects && entry('/projects'),
 ]
     .filter(Boolean)
     .join('\n')}

@@ -1,8 +1,10 @@
 // The reading pages: the Worker writes them whole, so all that's left is the
-// theme switch and the right-click menu.
+// theme switch, the right-click menu, the contents and, on phones, the folded
+// places to go.
 import './styles/writing.css';
 
 import { contextMenu, copy } from './menu.ts';
+import { foldNav } from './nav.ts';
 import { currentTheme, mountThemeButton } from './theme.ts';
 
 const canonical = (): string => document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? location.href.split('#')[0]!;
@@ -47,6 +49,25 @@ function followContents(): () => void {
     }) as [SVGPathElement, SVGPathElement, SVGPathElement];
     list.append(rail);
     const still = matchMedia('(prefers-reduced-motion: reduce)');
+
+    // Motion blur: while the marker travels it smears along the line by as much
+    // as it moved in that frame, and comes back into focus as it settles. The
+    // blur runs only up and down (the way the line runs), and its region is
+    // drawn around the marker alone. The rail is never much taller than the
+    // screen, so it stays well inside WebKit's filter texture limit.
+    const filter = document.createElementNS(NS, 'filter');
+    filter.setAttribute('id', 'toc-motion');
+    filter.setAttribute('filterUnits', 'userSpaceOnUse');
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+    const smear = document.createElementNS(NS, 'feGaussianBlur');
+    smear.setAttribute('stdDeviation', '0 0');
+    filter.append(smear);
+    const defs = document.createElementNS(NS, 'defs');
+    defs.append(filter);
+    rail.prepend(defs);
+    let blur = 0;
+    let fading = 0;
+    let lastMid: number | null = null;
 
     /** How far in, in pixels, the line steps beside an indented entry. */
     const STEP = 16;
@@ -142,6 +163,35 @@ function followContents(): () => void {
         track.setAttribute('d', slicePath(topEdge, botEdge));
         fill.setAttribute('d', slicePath(topEdge, Math.min(mid, botEdge)));
         marker.setAttribute('d', slicePath(curStart, curEnd));
+        focus(mid);
+    };
+
+    /** Smears the marker by how far it moved since the last frame, then lets it come back into focus. */
+    const focus = (mid: number): void => {
+        const moved = lastMid === null ? 0 : Math.abs(mid - lastMid);
+        lastMid = mid;
+        if (!still.matches && moved >= 0.5) blur = Math.min(6, Math.max(blur, moved * 0.45));
+        if (!blur) return;
+        const [, y0] = pointAt(curStart);
+        const [, y1] = pointAt(curEnd);
+        filter.setAttribute('x', '-20');
+        filter.setAttribute('y', String(Math.floor(Math.min(y0, y1) - 40)));
+        filter.setAttribute('width', String(STEP + 44));
+        filter.setAttribute('height', String(Math.ceil(Math.abs(y1 - y0) + 80)));
+        smear.setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        marker.setAttribute('filter', 'url(#toc-motion)');
+        if (!fading) fading = requestAnimationFrame(fade);
+    };
+    const fade = (): void => {
+        fading = 0;
+        blur *= 0.78;
+        if (blur < 0.1) {
+            blur = 0;
+            marker.removeAttribute('filter');
+            return;
+        }
+        smear.setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        fading = requestAnimationFrame(fade);
     };
 
     /** Entries cut off at an edge fade out there, by as much as lies beyond it, up to a line's worth. */
@@ -306,6 +356,7 @@ function followContents(): () => void {
         list.removeEventListener('scroll', onListScroll);
         cancelAnimationFrame(gliding);
         cancelAnimationFrame(sliding);
+        cancelAnimationFrame(fading);
         rail.remove();
     };
 }
@@ -343,8 +394,10 @@ export function mountReading(): () => void {
     });
 
     const unContents = followContents();
+    const unNav = foldNav();
 
     return () => {
+        unNav();
         unMenu();
         unTheme();
         unContents();

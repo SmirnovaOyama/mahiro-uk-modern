@@ -1,4 +1,4 @@
-import type { Article, ArticleState, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend } from '../src/shared/api.ts';
+import type { Article, ArticleState, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend, Project, ProjectLink } from '../src/shared/api.ts';
 import { renderMarkdown, SLUG, SLUG_MAX, slugify } from '../src/shared/markdown.ts';
 import { HttpError } from './http.ts';
 
@@ -437,4 +437,45 @@ export async function saveFriends(db: D1Database, friends: Friend[]): Promise<Fr
     const insert = db.prepare('INSERT INTO friends (position, name, url, note, avatar) VALUES (?, ?, ?, ?, ?)');
     await db.batch([db.prepare('DELETE FROM friends'), ...friends.map((f, i) => insert.bind(i, f.name, f.url, f.note, f.avatar))]);
     return listFriends(db);
+}
+
+// ── projects
+
+type ProjectRow = { name: string; rule: string; about: string; links: string };
+
+const parseLinks = (raw: string): ProjectLink[] => {
+    try {
+        const list = JSON.parse(raw) as unknown;
+        return Array.isArray(list)
+            ? list.flatMap(l =>
+                  l && typeof l === 'object' && typeof (l as ProjectLink).url === 'string'
+                      ? [{ url: (l as ProjectLink).url, preview: (l as ProjectLink).preview ?? null, fetchedAt: (l as ProjectLink).fetchedAt }]
+                      : [],
+              )
+            : [];
+    } catch {
+        return [];
+    }
+};
+
+export async function listProjects(db: D1Database): Promise<Project[]> {
+    // Until migration 0005 reaches a database there is no table; the page is then simply missing.
+    const { results } = await db
+        .prepare('SELECT name, rule, about, links FROM projects ORDER BY position')
+        .all<ProjectRow>()
+        .catch((error: unknown) => {
+            if (!String(error).includes('no such table')) throw error;
+            return { results: [] as ProjectRow[] };
+        });
+    return results.map(r => ({ name: r.name, rule: r.rule, about: r.about, links: parseLinks(r.links) }));
+}
+
+/** Puts the whole list in place at once, in the order given. */
+export async function saveProjects(db: D1Database, projects: Project[]): Promise<Project[]> {
+    const insert = db.prepare('INSERT INTO projects (position, name, rule, about, links) VALUES (?, ?, ?, ?, ?)');
+    await db.batch([
+        db.prepare('DELETE FROM projects'),
+        ...projects.map((p, i) => insert.bind(i, p.name, p.rule, p.about, JSON.stringify(p.links))),
+    ]);
+    return listProjects(db);
 }

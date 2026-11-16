@@ -4,11 +4,12 @@
 //
 //   /writing, /writing/:slug, /writing/feed.xml, /collections/:slug   what readers see
 //   /friends                                                          the people the blog points to
+//   /projects                                                         what I make
 //   /sitemap.xml                                                      for search engines
 //   /media/...                                                        pictures in articles
 //   /admin/preview/:id                                                a draft, for its author
 //   /api/...                                                          the editor's API
-import type { ArticleUpdate, CollectionUpdate, Friend } from '../src/shared/api.ts';
+import type { ArticleUpdate, CollectionUpdate, Friend, Project } from '../src/shared/api.ts';
 import { avatarSrc } from '../src/shared/friends.ts';
 import { renderMarkdown, SLUG_MAX } from '../src/shared/markdown.ts';
 import { checkPassword, clearCookie, isSignedIn, sameOrigin, sessionCookie } from './auth.ts';
@@ -16,7 +17,8 @@ import * as db from './db.ts';
 import type { Env } from './env.ts';
 import { HttpError, ids, json, optionalTime, readJson, str } from './http.ts';
 import * as media from './media.ts';
-import { articlePage, collectionPage, feed, friendsPage, notFound, respond, sitemap, writingIndex } from './pages.ts';
+import { anyStale, withPreviews } from './previews.ts';
+import { articlePage, collectionPage, feed, friendsPage, notFound, projectsPage, respond, sitemap, writingIndex } from './pages.ts';
 
 const route = (path: string, pattern: string): Record<string, string> | null => {
     const want = pattern.split('/');
@@ -161,10 +163,32 @@ async function api(request: Request, env: Env, url: URL): Promise<Response> {
         }
     }
 
+    // ── projects
+    if (path === '/api/projects') {
+        if (method === 'GET') return json(await db.listProjects(env.DB));
+        if (method === 'PUT') {
+            const { projects } = await readJson<{ projects?: unknown }>(request);
+            if (!Array.isArray(projects) || projects.length > 200) throw new HttpError(400, 'projects must be a list.', 'projects');
+            const list: Project[] = projects.map((p: Record<string, unknown>) => {
+                const links = Array.isArray(p?.links) ? p.links : [];
+                if (links.length > 12) throw new HttpError(400, 'A project can have twelve links at most.', 'links');
+                return {
+                    name: str(p?.name, 'name', 200),
+                    rule: str(p?.rule, 'rule', 300),
+                    about: str(p?.about, 'about', 1000),
+                    // Only the addresses are taken; the previews are the Worker's own to fetch.
+                    links: links.map((l: Record<string, unknown>) => ({ url: str(l?.url, 'url', 2000), preview: null })),
+                };
+            });
+            const filled = await withPreviews(list, await db.listProjects(env.DB), now);
+            return json(await db.saveProjects(env.DB, filled));
+        }
+    }
+
     throw new HttpError(404, 'There is nothing at this address.');
 }
 
-async function reader(request: Request, env: Env, url: URL): Promise<Response> {
+async function reader(request: Request, env: Env, url: URL, ctx: ExecutionContext): Promise<Response> {
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
     const now = Date.now();
     let p: Record<string, string> | null;
@@ -175,8 +199,24 @@ async function reader(request: Request, env: Env, url: URL): Promise<Response> {
     }
     if (path.startsWith('/media/')) return media.serve(request, env, path.slice('/media/'.length));
     if (path === '/sitemap.xml') {
-        const [articles, collections, friends] = await Promise.all([db.liveArticles(env.DB, now), db.liveCollections(env.DB, now), db.listFriends(env.DB)]);
-        return sitemap(url.origin, articles, collections, friendsPage(friends) !== null);
+        const [articles, collections, friends, projects] = await Promise.all([
+            db.liveArticles(env.DB, now),
+            db.liveCollections(env.DB, now),
+            db.listFriends(env.DB),
+            db.listProjects(env.DB),
+        ]);
+        return sitemap(url.origin, articles, collections, friendsPage(friends) !== null, projectsPage(projects) !== null);
+    }
+    if (path === '/projects') {
+        const projects = await db.listProjects(env.DB);
+        // Previews gone stale are fetched again after the page has gone out, for the next reader.
+        if (anyStale(projects, now))
+            ctx.waitUntil(
+                withPreviews(projects, projects, now)
+                    .then(fresh => db.saveProjects(env.DB, fresh))
+                    .catch(e => console.error('Refreshing link previews failed', e)),
+            );
+        return respond(env, request, projectsPage(projects) ?? notFound());
     }
     if (path === '/friends') return respond(env, request, friendsPage(await db.listFriends(env.DB)) ?? notFound());
     if (path === '/writing/feed.xml') return feed(url.origin, await db.liveArticlesWithBodies(env.DB, now, 30));
@@ -212,12 +252,12 @@ async function reader(request: Request, env: Env, url: URL): Promise<Response> {
 }
 
 export default {
-    async fetch(request, env): Promise<Response> {
+    async fetch(request, env, ctx): Promise<Response> {
         const url = new URL(request.url);
         try {
             if (url.pathname.startsWith('/api/')) return await api(request, env, url);
             if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
-            return await reader(request, env, url);
+            return await reader(request, env, url, ctx);
         } catch (e) {
             if (e instanceof HttpError) return json({ error: e.message, field: e.field }, e.status);
             console.error(e);

@@ -18,8 +18,8 @@ interface Loaded {
 
 type Kind = 'push' | 'replace' | 'traverse';
 
-/** The pages this can show: the sentence, the blog, its articles and collections, and friends. */
-const SITE = /^\/(?:|writing\/?|writing\/(?!feed\.xml$)[^/]+\/?|collections\/[^/]+\/?|friends\/?)$/;
+/** The pages this can show: the sentence, the blog, its articles and collections, friends and projects. */
+const SITE = /^\/(?:|writing\/?|writing\/(?!feed\.xml$)[^/]+\/?|collections\/[^/]+\/?|friends\/?|projects\/?)$/;
 const isSite = (url: URL): boolean => url.origin === location.origin && SITE.test(url.pathname);
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');

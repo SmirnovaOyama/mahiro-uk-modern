@@ -8,6 +8,11 @@ const PATHS = {
     arrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
     chevronUp: '<path d="m18 15-6-6-6 6"/>',
     chevronDown: '<path d="m6 9 6 6 6-6"/>',
+    // The folded places to go on a phone (nav.ts).
+    chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+    chevronRight: '<path d="m9 18 6-6-6-6"/>',
+    // A website among a project's links.
+    globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     // Callouts in prose.
@@ -29,3 +34,7 @@ export const githubMark = (className: string, size?: number): string =>
 
 export const icon = (name: IconName, size = 20): string =>
     `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${PATHS[name]}</svg>`;
+
+/** GitLab's tanuki (Simple Icons), filled like the GitHub mark beside it. */
+export const gitlabMark = (className: string, size?: number): string =>
+    `<svg class="${className}" viewBox="0 0 24 24"${size ? ` width="${size}" height="${size}"` : ''} fill="currentColor" aria-hidden="true" focusable="false"><path d="m23.6 9.593-.034-.086L20.3.981a.851.851 0 0 0-.336-.405.875.875 0 0 0-1 .054.875.875 0 0 0-.29.44l-2.206 6.748H7.538L5.332 1.07a.857.857 0 0 0-.29-.441.875.875 0 0 0-1-.054.859.859 0 0 0-.336.405L.433 9.502l-.032.086a6.066 6.066 0 0 0 2.012 7.01l.011.009.03.021 4.976 3.727 2.462 1.863 1.5 1.132a1.009 1.009 0 0 0 1.22 0l1.499-1.132 2.462-1.863 5.006-3.749.012-.01a6.068 6.068 0 0 0 2.01-7.003z"/></svg>`;

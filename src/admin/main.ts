@@ -1,5 +1,5 @@
 // The editor at /admin/: sign in, then a list on the left and the piece being
-// written on the right. Routes live in the hash: #/articles/12, #/collections/3, #/friends.
+// written on the right. Routes live in the hash: #/articles/12, #/collections/3, #/friends, #/projects.
 import '../styles/tokens.css';
 import '../styles/site.css';
 import '../styles/writing.css';
@@ -7,17 +7,19 @@ import '../styles/admin.css';
 import '../styles/motion.css';
 
 import { icon } from '../icons.ts';
-import type { ArticleSummary, CollectionSummary, Friend } from '../shared/api.ts';
+import type { ArticleSummary, CollectionSummary, Friend, Project } from '../shared/api.ts';
+import { linkPlace } from '../shared/links.ts';
 import { friendHref, hostOf } from '../shared/friends.ts';
 import { mountThemeButton } from '../theme.ts';
 import { api, ApiFailure, onSignedOut } from './api.ts';
 import { articleView, type View } from './article-view.ts';
 import { collectionView } from './collection-view.ts';
 import { friendsView, type FriendsView } from './friends-view.ts';
+import { projectsView, type ProjectsView } from './projects-view.ts';
 import { contextMenu, copy, MOD, type MenuEntry } from '../menu.ts';
 import { h, svg } from './dom.ts';
 
-type Kind = 'articles' | 'collections' | 'friends';
+type Kind = 'articles' | 'collections' | 'friends' | 'projects';
 
 const app = document.getElementById('app')!;
 const labels = () => ({ toDark: 'Switch to the dark theme', toLight: 'Switch to the light theme' });
@@ -62,11 +64,13 @@ function signIn(configured: boolean): void {
 let articles: ArticleSummary[] = [];
 let collections: CollectionSummary[] = [];
 let friends: Friend[] = [];
+let projects: Project[] = [];
 let current: { kind: Kind; id: number; view: View } | null = null;
 
 const articleList = h('ul', { class: 'side-list' });
 const collectionList = h('ul', { class: 'side-list' });
 const friendList = h('ul', { class: 'side-list' });
+const projectList = h('ul', { class: 'side-list' });
 const work = h('section', { class: 'work' });
 const themeButton = h('button', { class: 'btn-ghost btn-icon', type: 'button' });
 
@@ -95,6 +99,13 @@ async function toFriend(at: number | 'new'): Promise<void> {
     friendFocus = at;
     location.hash = '#/friends';
 }
+/** Where to put the cursor once the projects list is open. */
+let projectFocus: number | 'new' | null = null;
+async function toProject(at: number | 'new'): Promise<void> {
+    if (current?.kind === 'projects') return (current.view as ProjectsView).focus(at);
+    projectFocus = at;
+    location.hash = '#/projects';
+}
 async function newCollection(): Promise<void> {
     const c = await api.createCollection();
     collections = [...collections, c];
@@ -114,6 +125,7 @@ const shell = h(
             group('Articles', articleList, newArticle),
             group('Collections', collectionList, newCollection),
             group('Friends', friendList, () => toFriend('new')),
+            group('Projects', projectList, () => toProject('new')),
         ),
         h(
             'footer',
@@ -190,6 +202,31 @@ function paintList(): void {
             );
         }),
     );
+    paintProjects();
+}
+
+function paintProjects(): void {
+    projectList.replaceChildren(
+        ...projects.map((p, i) =>
+            h(
+                'li',
+                null,
+                h(
+                    'a',
+                    {
+                        class: `side-item${p.links.some(l => linkPlace(l.url)) ? '' : ' is-draft'}`,
+                        href: '#/projects',
+                        'data-project': i,
+                        onclick: (e: MouseEvent) => {
+                            e.preventDefault();
+                            void toProject(i);
+                        },
+                    },
+                    p.name.trim() || p.rule.trim() || 'Untitled',
+                ),
+            ),
+        ),
+    );
 }
 
 /** Saves the open piece before leaving it. False if it couldn't be saved and the writer chose to stay. */
@@ -234,6 +271,11 @@ async function removeItem(kind: Kind, id: number, title: string): Promise<void> 
 }
 
 function itemMenu(link: HTMLAnchorElement): MenuEntry[] | null {
+    if (link.dataset.project) {
+        const i = Number(link.dataset.project);
+        const first = projects[i]?.links.map(l => linkPlace(l.url)).find(Boolean);
+        return [{ label: 'Open', run: () => toProject(i) }, first && { label: 'Visit', run: () => void window.open(first.href, '_blank', 'noopener') }];
+    }
     if (link.dataset.friend) {
         const i = Number(link.dataset.friend);
         const href = friendHref(friends[i]?.url ?? '');
@@ -270,6 +312,7 @@ contextMenu(app, target => {
             { label: 'New article', run: () => newArticle() },
             { label: 'New collection', run: () => newCollection() },
             { label: 'New friend', run: () => toFriend('new') },
+            { label: 'New project', run: () => toProject('new') },
             'gap',
             { label: 'Hide the list', keys: `${MOD}\\`, run: toggleList },
         ];
@@ -308,8 +351,8 @@ function swap(change: () => void, type?: 'forward' | 'back', animate = true): vo
 
 let lastHash = '';
 async function route(animate = true): Promise<void> {
-    const m = /^#\/(?:(articles|collections)\/(\d+)|(friends))$/.exec(location.hash);
-    const want = m ? (m[3] ? { kind: 'friends' as Kind, id: 0 } : { kind: m[1] as Kind, id: Number(m[2]) }) : null;
+    const m = /^#\/(?:(articles|collections)\/(\d+)|(friends|projects))$/.exec(location.hash);
+    const want = m ? (m[3] ? { kind: m[3] as Kind, id: 0 } : { kind: m[1] as Kind, id: Number(m[2]) }) : null;
     if (current && want && current.kind === want.kind && current.id === want.id) return;
     if (!(await leave())) {
         history.replaceState(null, '', lastHash || '#');
@@ -331,7 +374,15 @@ async function route(animate = true): Promise<void> {
     const back = (): void => void (location.hash = '');
     try {
         const view =
-            want.kind === 'friends'
+            want.kind === 'projects'
+                ? projectsView(await api.projects(), {
+                      changed: list => {
+                          projects = list;
+                          paintList();
+                      },
+                      back,
+                  })
+                : want.kind === 'friends'
                 ? friendsView(await api.friends(), {
                       changed: list => {
                           friends = list;
@@ -372,8 +423,10 @@ async function route(animate = true): Promise<void> {
             shell.classList.add('has-item');
             work.replaceChildren(view.el);
             view.mounted?.();
-            if (friendFocus !== null && 'focus' in view) (view as FriendsView).focus(friendFocus);
+            if (want.kind === 'friends' && friendFocus !== null) (view as FriendsView).focus(friendFocus);
+            if (want.kind === 'projects' && projectFocus !== null) (view as ProjectsView).focus(projectFocus);
             friendFocus = null;
+            projectFocus = null;
             paintList();
         }, wasOpen ? undefined : 'forward', animate);
     } catch (e) {
@@ -386,7 +439,7 @@ async function route(animate = true): Promise<void> {
 }
 
 async function start(): Promise<void> {
-    [articles, collections, friends] = await Promise.all([api.articles(), api.collections(), api.friends()]);
+    [articles, collections, friends, projects] = await Promise.all([api.articles(), api.collections(), api.friends(), api.projects()]);
     app.replaceChildren(shell);
     await route(false);
 }

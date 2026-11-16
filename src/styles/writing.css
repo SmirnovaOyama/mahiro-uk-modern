@@ -11,10 +11,19 @@
     gap: var(--space-1);
     white-space: nowrap;
 }
-/* Phones: the places to go need the whole line, so the blog's name steps
-   aside (still read out) and its picture stands for it. */
+/* The links sit straight in the row; on phones nav.ts may fold them away. */
+.nav-links {
+    display: contents;
+}
+.nav-toggle,
+.nav-fold {
+    display: none;
+}
+/* Phones, without the fold (no scripts): the places to go need the whole
+   line, so the blog's name steps aside (still read out) and its picture
+   stands for it. */
 @media (max-width: 420px) {
-    .reading-top .home-name {
+    .reading-top:not(.can-fold) .home-name {
         position: absolute;
         width: 1px;
         height: 1px;
@@ -32,6 +41,112 @@
     }
     .reading-nav .btn-ghost:not(.btn-icon) {
         padding-inline: var(--space-2);
+    }
+}
+
+/* ── the places to go, folded on a phone (nav.ts) ─────────────────────
+   Folded, the line holds the blog's name, the part being read ("‹ Writing")
+   and the theme switch. Opened, that line gives way and the links slide in
+   a short step from the right, nearest first, with a little spring; folded
+   again, they leave as one, a few pixels to the right and out, and the line
+   comes back. Few things move, and none of them far. */
+@media (max-width: 420px) {
+    .reading-top {
+        /* A spring with a touch more give than --ease-spring. */
+        --ease-unfold: linear(
+            0, 0.04 1.6%, 0.16 3.6%, 0.36 6.4%, 0.6 10%, 0.8 13.8%, 0.94 17.6%, 1.03 21.6%, 1.05 25.6%,
+            1.05 29%, 1.04 33%, 1.02 38.5%, 1.004 45%, 0.996 52%, 0.995 58%, 0.998 68%, 1.0003 80%, 1
+        );
+        --fold-out: 180ms;
+    }
+    .reading-top.can-fold .nav-toggle {
+        display: inline-flex;
+        gap: var(--space-1);
+        padding-inline: var(--space-1_5) 0.625rem;
+    }
+    .nav-toggle svg {
+        color: var(--text-muted);
+        transition: transform var(--duration-base) var(--ease-standard);
+    }
+    .nav-toggle:hover svg {
+        transform: translateX(-2px);
+    }
+    .reading-top.can-fold .nav-fold {
+        display: inline-flex;
+    }
+    /* Where it already is needs no way there; the label says so. */
+    .reading-top.can-fold .nav-links [aria-current='page'] {
+        display: none;
+    }
+
+    /* Folded: the links as a group, gone a few pixels to the right. */
+    .reading-top.can-fold .nav-links {
+        display: flex;
+        align-items: center;
+        position: absolute;
+        inset-block-start: calc(var(--space-5) + env(safe-area-inset-top, 0px));
+        inset-inline-end: calc(var(--space-6) - var(--space-2));
+        opacity: 0;
+        transform: translateX(10px);
+        pointer-events: none;
+        transition:
+            opacity var(--fold-out) cubic-bezier(0.4, 0, 1, 1),
+            transform var(--fold-out) cubic-bezier(0.4, 0, 1, 1);
+    }
+    /* Each link waits, out of sight, back where it will slide in from next
+       time; it only goes there once the group has gone. */
+    .reading-top.can-fold .nav-links > * {
+        opacity: 0;
+        transform: translateX(20px);
+        transition:
+            opacity 0s linear var(--fold-out),
+            transform 0s linear var(--fold-out),
+            color var(--duration-quick) var(--ease-standard),
+            background-color var(--duration-quick) var(--ease-standard);
+    }
+    /* The chevron that folds them sits in the theme switch's place, and stays there. */
+    .reading-top.can-fold .nav-links > .nav-fold {
+        transform: none;
+    }
+
+    /* Open: the group is there at once; its links bring themselves in. */
+    .reading-top.is-open .nav-links {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        transition: none;
+    }
+    .reading-top.is-open .nav-links > * {
+        opacity: 1;
+        transform: none;
+        transition:
+            opacity var(--duration-base) var(--ease-standard) calc(60ms + var(--delay, 0ms)),
+            transform 520ms var(--ease-unfold) calc(60ms + var(--delay, 0ms)),
+            color var(--duration-quick) var(--ease-standard),
+            background-color var(--duration-quick) var(--ease-standard);
+    }
+
+    /* The folded line: it steps out before the links come, and back in as they go. */
+    .reading-top.can-fold .home,
+    .reading-top.can-fold .nav-toggle,
+    .reading-top.can-fold #theme {
+        transition:
+            opacity var(--duration-base) var(--ease-standard) calc(var(--fold-out) * 0.6),
+            color var(--duration-quick) var(--ease-standard),
+            background-color var(--duration-quick) var(--ease-standard);
+    }
+    .reading-top.is-open .home,
+    .reading-top.is-open .nav-toggle,
+    .reading-top.is-open #theme {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 120ms var(--ease-standard);
+    }
+}
+@media (max-width: 420px) and (prefers-reduced-motion: reduce) {
+    .reading-top.can-fold .nav-links,
+    .reading-top.can-fold .nav-links > * {
+        transform: none;
     }
 }
 .home {
@@ -350,6 +465,136 @@ html {
 }
 .reading-nav [aria-current='page'] {
     color: var(--text);
+}
+
+/* ── projects: each led by its rule, the name following small ─────────── */
+
+.projects {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.project + .project {
+    margin-block-start: var(--space-16);
+}
+.project-rule {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 4.4vw, 2.375rem);
+    line-height: 1.3;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+}
+.project-name {
+    margin-block-start: var(--space-3);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+}
+.project-about {
+    max-width: 34rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    text-wrap: pretty;
+}
+
+/* Its links, each a quiet card: where, then what that place says of itself. */
+.link-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-3);
+    margin: var(--space-5) 0 0;
+    padding: 0;
+    list-style: none;
+}
+.link-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    height: 100%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition:
+        box-shadow var(--duration-quick) var(--ease-standard),
+        background-color var(--duration-quick) var(--ease-standard);
+}
+.link-card:hover {
+    background: var(--surface-hover);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent-ink) 40%, var(--border));
+}
+.link-card:focus-visible {
+    outline: 2px solid var(--accent-ink);
+    outline-offset: 2px;
+}
+.link-card-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-0_5);
+    min-width: 0;
+}
+.link-card-where {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1_5);
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+}
+.link-card-where span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.link-card-where svg {
+    flex: none;
+}
+.link-card:hover .link-card-where {
+    color: var(--accent-ink);
+}
+.link-card-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--text);
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    text-wrap: pretty;
+}
+.link-card-title.is-quiet {
+    color: var(--text-muted);
+}
+.link-card-about {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+}
+.link-card-meta {
+    margin-block-start: var(--space-1);
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+}
+/* A website's picture, small, beside what it says; never wider than a third of the card. */
+.link-card-image {
+    flex: none;
+    width: min(7.5rem, 33%);
+    height: auto;
+    aspect-ratio: 1.91;
+    border-radius: var(--radius-xs);
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border);
+    background: var(--surface-hover);
 }
 
 /* ── a collection, frozen to the bottom of the screen ────────────────
