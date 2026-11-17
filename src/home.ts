@@ -307,6 +307,10 @@ export function mountHome(): () => void {
     const unTheme = mountThemeButton($<HTMLButtonElement>('theme'), () => copy().ui);
     document.querySelector('meta[name="description"]')?.setAttribute('content', copy().ui.description);
 
+    const tdor = $<HTMLAnchorElement>('tdor');
+    tdor.href = config.tdor.href;
+    tdor.title = config.tdor.title;
+    tdor.textContent = config.tdor.label;
     const gh = $<HTMLAnchorElement>('gh');
     gh.href = config.github;
     gh.innerHTML = githubMark('', 18);

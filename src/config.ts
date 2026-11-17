@@ -17,6 +17,8 @@ const config = {
     utcOffsetHours: 8,
     email: 'contact@mahiro.uk',
     github: 'https://github.com/SmirnovaOyama',
+    /** The Transgender Day of Remembrance page, linked from the header. */
+    tdor: { href: 'https://tdor.mahiro.uk', label: 'TDoR', title: 'Transgender Day of Remembrance 2026' },
     mahiro: 'https://oniichan-wa-oshimai.fandom.com/wiki/Mahiro_Oyama',
     projects,
 };

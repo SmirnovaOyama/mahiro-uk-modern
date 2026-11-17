@@ -295,7 +295,8 @@ export async function respond(env: Env, request: Request, page: Page): Promise<R
                 // A missing page borrows /writing's path without being it.
                 const here = (href: string): string => (page.path === href && !page.status ? ' aria-current="page"' : '');
                 const link = (href: string, label: string): string => `<a class="btn-ghost" href="${href}"${here(href)}>${label}</a>`;
-                e.prepend(link('/writing', 'Writing') + (friends ? link('/friends', 'Friends') : '') + (projects ? link('/projects', 'Projects') : ''), { html: true });
+                const tdor = `<a class="btn-ghost" href="${esc(config.tdor.href)}" title="${esc(config.tdor.title)}">${esc(config.tdor.label)}</a>`;
+                e.prepend(link('/writing', 'Writing') + (friends ? link('/friends', 'Friends') : '') + (projects ? link('/projects', 'Projects') : '') + tdor, { html: true });
             },
         })
         .on('title', { element: e => void e.setInnerContent(page.title) })
