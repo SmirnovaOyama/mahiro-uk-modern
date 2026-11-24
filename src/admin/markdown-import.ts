@@ -43,15 +43,12 @@ export function figureReferences(markdown: string, documentPath: string): Figure
             if (match && href && !/^(?:[a-z][a-z\d+.-]*:|\/|#|\?)/i.test(href)) {
                 // Use the original spelling to replace only the destination,
                 // never the alt text or the optional caption/title.
-                const afterAlt = text.indexOf('](', text.indexOf('![') + 2) + 2;
                 // The matched destination is at the end of the image's opening
                 // syntax; escaped closing brackets in alt text are supported.
                 const opening = /^ {0,3}!\[(?:\\.|[^\]\\])*\]\([ \t]*<?/.exec(text)!;
                 const start = opening[0].length;
-                if (afterAlt > 1) {
-                    const path = normalize(base + '/' + decodeURIComponent(href));
-                    refs.push({ start: offset + start, end: offset + start + href.length, path });
-                }
+                const path = normalize(base + '/' + decodeURIComponent(href));
+                refs.push({ start: offset + start, end: offset + start + href.length, path });
             }
         }
         offset += line.length + 1;
@@ -81,7 +78,8 @@ export async function importMarkdownFolder(files: File[], upload: (file: Blob) =
     const images = new Map<string, Blob>();
     for (const path of new Set(refs.map(ref => ref.path))) {
         const file = byPath.get(path);
-        const type = mime[path.split('.').pop()!.toLowerCase()];
+        const ext = path.split('.').pop()!.toLowerCase();
+        const type = Object.hasOwn(mime, ext) ? mime[ext] : undefined;
         if (!file || !type) throw new Error('Missing or unsupported figure: ' + path);
         if (!file.size || file.size > 20 * 1024 * 1024) throw new Error('Figure must be between 1 byte and 20 MB: ' + path);
         images.set(path, file.type === type ? file : new Blob([file], { type }));
