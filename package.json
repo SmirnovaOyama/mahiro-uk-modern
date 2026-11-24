@@ -28,6 +28,7 @@
     "marked-footnote": "^1.4.0",
     "marked-katex-extension": "^5.1.13",
     "marked-smartypants": "^1.1.12",
+    "mermaid": "^12.3.0",
     "pinyin-pro": "^3.29.5"
   }
 }

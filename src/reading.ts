@@ -6,6 +6,7 @@ import './styles/writing.css';
 import { contextMenu, copy } from './menu.ts';
 import { foldNav } from './nav.ts';
 import { currentTheme, mountThemeButton } from './theme.ts';
+import type { Theme } from './types.ts';
 
 const canonical = (): string => document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? location.href.split('#')[0]!;
 
@@ -363,11 +364,24 @@ function followContents(): () => void {
 
 /** Sets a reading page up; returns how to take it down. */
 export function mountReading(): () => void {
+    const diagrams = document.querySelectorAll<HTMLElement>('.prose pre > code.language-mermaid');
+    let diagramTheme: Theme | undefined;
+    const recolorDiagrams = (): void => {
+        const theme = currentTheme();
+        if (!diagrams.length || theme === diagramTheme) return;
+        diagramTheme = theme;
+        void import('./mermaid.ts')
+            .then(({ renderDiagrams }) => renderDiagrams(diagrams, theme, () => diagramTheme === theme))
+            .catch(() => {
+                // The source is still readable if the diagram module fails to load.
+            });
+    };
     const themeButton = document.getElementById('theme');
     const unTheme =
         themeButton instanceof HTMLButtonElement
-            ? mountThemeButton(themeButton, () => ({ toDark: 'Switch to the dark theme', toLight: 'Switch to the light theme' }))
+            ? mountThemeButton(themeButton, () => ({ toDark: 'Switch to the dark theme', toLight: 'Switch to the light theme' }), recolorDiagrams)
             : () => {};
+    recolorDiagrams();
 
     // Links, pictures, chosen words and the browser's own controls keep the browser's menu.
     // Going somewhere clicks the page's own link, so it changes in place like any other.
@@ -376,12 +390,19 @@ export function mountReading(): () => void {
         const chosen = getSelection();
         if (chosen && !chosen.isCollapsed && chosen.toString().trim()) return null;
 
-        const section = sectionAt(target, event.clientY);
+        const diagram = target.closest<HTMLElement>('.prose .mermaid-diagram');
+        const code = target.closest('.prose pre')?.querySelector(':scope > code');
+        const source = diagram?.dataset.mermaidSource ?? code?.textContent;
+        const copyLabel = diagram || code?.classList.contains('language-mermaid') ? 'Copy Mermaid source' : 'Copy code';
+        const y = event.clientX || event.clientY ? event.clientY : target.getBoundingClientRect().top;
+        const section = sectionAt(target, y);
         const prev = document.querySelector<HTMLAnchorElement>('.series-bar a[rel="prev"]');
         const next = document.querySelector<HTMLAnchorElement>('.series-bar a[rel="next"]');
         const blog = document.querySelector<HTMLAnchorElement>('.reading-top a.home');
         const atIndex = location.pathname.replace(/\/+$/, '') === '/writing';
         return [
+            source && { label: copyLabel, run: () => copy(source) },
+            'gap',
             section && { label: 'Copy link to this section', run: () => copy(`${canonical()}#${section.id}`) },
             { label: 'Copy link', run: () => copy(canonical()) },
             'gap',
@@ -397,6 +418,7 @@ export function mountReading(): () => void {
     const unNav = foldNav();
 
     return () => {
+        diagramTheme = undefined;
         unNav();
         unMenu();
         unTheme();
