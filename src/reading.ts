@@ -376,12 +376,19 @@ export function mountReading(): () => void {
         const chosen = getSelection();
         if (chosen && !chosen.isCollapsed && chosen.toString().trim()) return null;
 
-        const section = sectionAt(target, event.clientY);
+        const diagram = target.closest<HTMLElement>('.prose .mermaid-diagram');
+        const code = target.closest('.prose pre')?.querySelector(':scope > code');
+        const source = diagram?.dataset.mermaidSource ?? code?.textContent;
+        const copyLabel = diagram || code?.classList.contains('language-mermaid') ? 'Copy Mermaid source' : 'Copy code';
+        const y = event.clientX || event.clientY ? event.clientY : target.getBoundingClientRect().top;
+        const section = sectionAt(target, y);
         const prev = document.querySelector<HTMLAnchorElement>('.series-bar a[rel="prev"]');
         const next = document.querySelector<HTMLAnchorElement>('.series-bar a[rel="next"]');
         const blog = document.querySelector<HTMLAnchorElement>('.reading-top a.home');
         const atIndex = location.pathname.replace(/\/+$/, '') === '/writing';
         return [
+            source && { label: copyLabel, run: () => copy(source) },
+            'gap',
             section && { label: 'Copy link to this section', run: () => copy(`${canonical()}#${section.id}`) },
             { label: 'Copy link', run: () => copy(canonical()) },
             'gap',

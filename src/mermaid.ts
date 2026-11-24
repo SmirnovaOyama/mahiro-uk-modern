@@ -30,6 +30,7 @@ export async function renderDiagrams(blocks: NodeListOf<HTMLElement>): Promise<v
 
             const figure = document.createElement('figure');
             figure.className = 'mermaid-diagram';
+            figure.dataset.mermaidSource = source;
             figure.tabIndex = 0;
             figure.setAttribute('aria-label', 'Mermaid diagram');
             figure.innerHTML = svg;
