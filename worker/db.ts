@@ -1,5 +1,5 @@
 import type { Article, ArticleState, ArticleSummary, ArticleUpdate, Collection, CollectionSummary, CollectionUpdate, Friend, Project, ProjectLink } from '../src/shared/api.ts';
-import { renderMarkdown, SLUG, SLUG_MAX, slugify } from '../src/shared/markdown.ts';
+import { MATH_DELIMITERS_MARKER, needsMathRefresh, renderMarkdown, SLUG, SLUG_MAX, slugify } from '../src/shared/markdown.ts';
 import { HttpError } from './http.ts';
 
 interface ArticleRow {
@@ -161,7 +161,7 @@ export async function publishArticle(db: D1Database, id: number, now: number): P
                  published_summary = summary, published_body = body, published_html = ?,
                  published_at = COALESCE(published_at, ?), republished_at = ? WHERE id = ?`,
             )
-            .bind(renderMarkdown(row.body), now, now, id),
+            .bind(MATH_DELIMITERS_MARKER + renderMarkdown(row.body), now, now, id),
         // The new address is live now, so it can no longer point anywhere else.
         db.prepare('DELETE FROM slug_redirects WHERE slug = ?').bind(row.slug),
     ];
@@ -333,7 +333,7 @@ export async function liveArticles(db: D1Database, now: number, limit = 1000): P
 }
 
 const ensureHtml = (a: LiveArticle): LiveArticle =>
-    !a.html.includes('class="callout') && /(?:^|\n) {0,3}(?:::{3,}[ \t]*[a-zA-Z]|>[ \t]*\[![a-zA-Z])/.test(a.body)
+    needsMathRefresh(a.body, a.html) || (!a.html.includes('class="callout') && /(?:^|\n) {0,3}(?:::{3,}[ \t]*[a-zA-Z]|>[ \t]*\[![a-zA-Z])/.test(a.body))
         ? { ...a, html: renderMarkdown(a.body) }
         : a;
 

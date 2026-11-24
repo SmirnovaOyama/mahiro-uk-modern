@@ -966,6 +966,24 @@ html {
     color: var(--text);
 }
 
+/* Diagrams keep a light canvas so author-defined colors remain legible. */
+.prose .mermaid-diagram {
+    margin: 1.4em 0;
+    padding: var(--space-3);
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--neutral-0);
+    color: var(--neutral-950);
+    color-scheme: light;
+    text-align: start;
+}
+.prose .mermaid-diagram > svg {
+    display: block;
+    margin-inline: auto;
+}
+
 /* LaTeX, set by KaTeX. Its own stylesheet comes only with pages that have math. */
 .prose .katex {
     font-size: 1.08em;
@@ -976,6 +994,10 @@ html {
     overflow-x: auto;
     overflow-y: hidden;
     padding-block: 0.2em;
+}
+.prose .katex-display > .katex {
+    width: max-content;
+    min-width: 100%;
 }
 .prose .katex-error {
     font-family: var(--font-mono);

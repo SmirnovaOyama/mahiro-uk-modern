@@ -393,6 +393,13 @@ export function mountReading(): () => void {
         ];
     });
 
+    const diagrams = document.querySelectorAll<HTMLElement>('.prose pre > code.language-mermaid');
+    if (diagrams.length) {
+        void import('./mermaid.ts').then(({ renderDiagrams }) => renderDiagrams(diagrams)).catch(() => {
+            // The source is still readable if the diagram module fails to load.
+        });
+    }
+
     const unContents = followContents();
     const unNav = foldNav();
 

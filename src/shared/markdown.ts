@@ -9,7 +9,7 @@
 //   ![alt](src "A caption")     on a line of its own becomes a figure with that caption
 //   headings                    get an id and a quiet # to link to them by
 //   $e^{i\pi} + 1 = 0$          LaTeX, set by KaTeX, inline;
-//   $$ … $$ or ```math          and on a line of its own, centred
+//   $$ … $$, \[ … \] or ```math  and on a line of its own, centred
 //   :::info[Title]{open} … :::  and > [!INFO] Title callouts, quiet or unfolding
 import katex from 'katex';
 import { Marked, type TokenizerThis, type Tokens } from 'marked';
@@ -35,6 +35,17 @@ export interface RenderOptions {
 
 /** Whether rendered HTML holds any math, so the page knows to bring the math styles. */
 export const hasMath = (html: string): boolean => html.includes('class="katex');
+
+const sameLineDisplayMath = /^ {0,3}\$\$(?!\$)[ \t]*([^\n]+?)\$\$(?!\$)[ \t]*(?:\n|$)/;
+const bracketDisplayMath = /^ {0,3}\\\[([\s\S]+?)\\\][ \t]*(?:\n|$)/;
+const inlineMathStart = /\\\(|\$(?![\s$])(?:\\.|[^\\$\n])+\$(?=[)\]}!?;:–—-])/;
+
+export const MATH_DELIMITERS_MARKER = '<!-- math-delimiters-v2 -->';
+
+export function needsMathRefresh(body: string, html: string): boolean {
+    return !html.startsWith(MATH_DELIMITERS_MARKER)
+        && (/^ {0,3}(?:\$\$.+\$\$[ \t]*$|\\\[)/m.test(body) || inlineMathStart.test(body));
+}
 
 const isExternal = (href: string): boolean => /^https?:\/\//i.test(href);
 
@@ -155,6 +166,37 @@ export function renderMarkdown(markdown: string, { math = 'html' }: RenderOption
     marked.use(markedSmartypants({ config: 2 }), markedFootnote({ description: 'Notes', refMarkers: false }), markedKatex({ ...katexOptions, nonStandard: false }));
     marked.use({
         extensions: [
+            {
+                name: 'displayMath',
+                level: 'block',
+                start(src: string): number | undefined {
+                    return src.match(/^ {0,3}(?:\$\$|\\\[)/m)?.index;
+                },
+                tokenizer(src: string): Tokens.Generic | undefined {
+                    const match = sameLineDisplayMath.exec(src) ?? bracketDisplayMath.exec(src);
+                    if (!match?.[1]?.trim()) return undefined;
+                    return { type: 'displayMath', raw: match[0], text: match[1].trim() };
+                },
+                renderer(token: Tokens.Generic): string {
+                    return `<div class="math-display">${katex.renderToString(token.text, { ...katexOptions, displayMode: true })}</div>\n`;
+                },
+            },
+            {
+                name: 'delimitedInlineMath',
+                level: 'inline',
+                start(src: string): number | undefined {
+                    return src.match(inlineMathStart)?.index;
+                },
+                tokenizer(src: string): Tokens.Generic | undefined {
+                    const match = /^\\\(((?:\\[^)]|[^\\\n])+?)\\\)/.exec(src)
+                        ?? /^\$(?![\s$])((?:\\.|[^\\$\n])+?)\$(?=[)\]}!?;:–—-])/.exec(src);
+                    if (!match?.[1]?.trim()) return undefined;
+                    return { type: 'delimitedInlineMath', raw: match[0], text: match[1].trim() };
+                },
+                renderer(token: Tokens.Generic): string {
+                    return katex.renderToString(token.text, katexOptions);
+                },
+            },
             {
                 name: 'callout',
                 level: 'block',
