@@ -4,6 +4,7 @@ import { icon } from '../icons.ts';
 import type { Article, ArticleSummary } from '../shared/api.ts';
 import { hasHan, slugify } from '../shared/slug.ts';
 import { drawCard } from './card.ts';
+import { importMarkdownFolder } from './markdown-import.ts';
 import { api, ApiFailure } from './api.ts';
 import { autosave, describe, type SaveState } from './autosave.ts';
 import { h, svg } from './dom.ts';
@@ -166,6 +167,37 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
         picker.value = '';
     });
 
+    // Import a complete Markdown folder instead of pasting broken relative image links.
+    const folderPicker = h('input', { type: 'file', multiple: true, webkitdirectory: true, hidden: true });
+    let importing = false;
+    const importButton = h('button', { class: 'btn-ghost', type: 'button', onclick: () => folderPicker.click() }, 'Import Markdown folder…');
+    folderPicker.addEventListener('change', async () => {
+        const files = [...(folderPicker.files ?? [])];
+        folderPicker.value = '';
+        if (!files.length || importing) return;
+        if (!confirm('Import this folder? This replaces the article text. Pictures are uploaded to public media URLs even if the article is a draft. Only select files you may share.')) return;
+        const before = body.value;
+        importing = true;
+        importButton.disabled = true;
+        try {
+            importButton.textContent = 'Importing…';
+            const markdown = await importMarkdownFolder(files, file => api.upload(file));
+            if (!body.isConnected) return;
+            if (body.value !== before) throw new Error('The article changed during import. Its text has been kept; please try again.');
+            body.focus();
+            body.setSelectionRange(0, body.value.length);
+            // The existing insert helper preserves undo and triggers autosave.
+            insertBlock(body, markdown);
+            await saver.flush();
+        } catch (e) {
+            if (body.isConnected) say({ kind: 'error', message: e instanceof Error ? e.message : 'Could not import the folder.', stale: false });
+        } finally {
+            importing = false;
+            importButton.disabled = false;
+            importButton.textContent = 'Import Markdown folder…';
+        }
+    });
+
     // ── right-click
     function textMenu(): MenuEntry[] {
         const selected = body.selectionStart !== body.selectionEnd;
@@ -178,6 +210,7 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
             selected && { label: 'Math', run: () => wrap(body, '$', 'x') },
             selected && { label: 'Link', keys: `${MOD}K`, run: () => link(body) },
             !selected && { label: 'Picture…', run: () => picker.click() },
+            !selected && !importing && { label: 'Import Markdown folder…', run: () => folderPicker.click() },
             'gap',
             { label: 'Heading', run: () => linePrefix(body, '## ') },
             { label: 'Quote', run: () => linePrefix(body, '> ') },
@@ -315,6 +348,8 @@ export function articleView(initial: Article, ctx: ArticleContext): View {
                 summary,
                 body,
                 picker,
+                folderPicker,
+                importButton,
                 h('footer', { class: 'sheet-foot' }, discardButton, unpublishButton, h('button', { class: 'btn-ghost danger', type: 'button', onclick: () => void remove() }, 'Delete')),
             ),
         ),
