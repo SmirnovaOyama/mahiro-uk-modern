@@ -6,6 +6,7 @@ import './styles/writing.css';
 import { contextMenu, copy } from './menu.ts';
 import { foldNav } from './nav.ts';
 import { currentTheme, mountThemeButton } from './theme.ts';
+import type { Theme } from './types.ts';
 
 const canonical = (): string => document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? location.href.split('#')[0]!;
 
@@ -363,11 +364,24 @@ function followContents(): () => void {
 
 /** Sets a reading page up; returns how to take it down. */
 export function mountReading(): () => void {
+    const diagrams = document.querySelectorAll<HTMLElement>('.prose pre > code.language-mermaid');
+    let diagramTheme: Theme | undefined;
+    const recolorDiagrams = (): void => {
+        const theme = currentTheme();
+        if (!diagrams.length || theme === diagramTheme) return;
+        diagramTheme = theme;
+        void import('./mermaid.ts')
+            .then(({ renderDiagrams }) => renderDiagrams(diagrams, theme, () => diagramTheme === theme))
+            .catch(() => {
+                // The source is still readable if the diagram module fails to load.
+            });
+    };
     const themeButton = document.getElementById('theme');
     const unTheme =
         themeButton instanceof HTMLButtonElement
-            ? mountThemeButton(themeButton, () => ({ toDark: 'Switch to the dark theme', toLight: 'Switch to the light theme' }))
+            ? mountThemeButton(themeButton, () => ({ toDark: 'Switch to the dark theme', toLight: 'Switch to the light theme' }), recolorDiagrams)
             : () => {};
+    recolorDiagrams();
 
     // Links, pictures, chosen words and the browser's own controls keep the browser's menu.
     // Going somewhere clicks the page's own link, so it changes in place like any other.
@@ -400,17 +414,11 @@ export function mountReading(): () => void {
         ];
     });
 
-    const diagrams = document.querySelectorAll<HTMLElement>('.prose pre > code.language-mermaid');
-    if (diagrams.length) {
-        void import('./mermaid.ts').then(({ renderDiagrams }) => renderDiagrams(diagrams)).catch(() => {
-            // The source is still readable if the diagram module fails to load.
-        });
-    }
-
     const unContents = followContents();
     const unNav = foldNav();
 
     return () => {
+        diagramTheme = undefined;
         unNav();
         unMenu();
         unTheme();

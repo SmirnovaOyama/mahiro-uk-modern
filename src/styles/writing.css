@@ -966,7 +966,6 @@ html {
     color: var(--text);
 }
 
-/* Diagrams keep a light canvas so author-defined colors remain legible. */
 .prose .mermaid-diagram {
     margin: 1.4em 0;
     padding: var(--space-3);
@@ -974,9 +973,8 @@ html {
     overflow-x: auto;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--neutral-0);
-    color: var(--neutral-950);
-    color-scheme: light;
+    background: var(--surface);
+    color: var(--text);
     text-align: start;
 }
 .prose .mermaid-diagram > svg {
